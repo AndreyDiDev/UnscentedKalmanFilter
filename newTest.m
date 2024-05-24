@@ -11,17 +11,38 @@ y = z;
 x = time;
 
 % Fit a polynomial p of degree "degree" to the (x,y) data:
-degree = 20;
+degree = 100;
 p = polyfit(x,y,degree);
 
 % Evaluate the fitted polynomial p and plot:
 f = polyval(p,x);
+
+% Calculate residuals
+actual_values= z;
+predicted_values = f;
+
+residuals = actual_values - predicted_values;
+
 eqn = poly_equation(flip(p)); % polynomial equation (string)
 Rsquared = my_Rsquared_coeff(y,f); % correlation coefficient
 
 figure(3);plot(x,y,'o',x,f,'-')
 legend('data',eqn)
 title(['Data fit - R squared = ' num2str(Rsquared)]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% for residual graph
+% Create a scatter plot
+figure;
+scatter(1:length(residuals), residuals, 'filled');
+xlabel('Observation Index');
+ylabel('Residuals');
+title('Residual Plot');
+grid on;
+
+% Optionally, add a horizontal line at y = 0
+hold on;
+plot([1, length(residuals)], [0, 0], 'r--');
+hold off;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
