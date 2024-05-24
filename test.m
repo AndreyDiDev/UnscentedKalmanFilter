@@ -17,3 +17,6 @@ ylim([0 3000])
 
 hold on
 plot(T.Time_s_,f)
+
+% Plot the Residuals to Evaluate the Fit
+plot(f,time,z,'residuals');
