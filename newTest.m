@@ -11,7 +11,7 @@ y = z;
 x = time;
 
 % Fit a polynomial p of degree "degree" to the (x,y) data:
-degree = 12;
+degree = 15;
 p = polyfit(x,y,degree);
 
 % Evaluate the fitted polynomial p and plot:
