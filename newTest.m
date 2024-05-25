@@ -11,7 +11,7 @@ y = z;
 x = time;
 
 % Fit a polynomial p of degree "degree" to the (x,y) data:
-degree = 100;
+degree = 12;
 p = polyfit(x,y,degree);
 
 % Evaluate the fitted polynomial p and plot:
@@ -25,6 +25,9 @@ residuals = actual_values - predicted_values;
 
 eqn = poly_equation(flip(p)); % polynomial equation (string)
 Rsquared = my_Rsquared_coeff(y,f); % correlation coefficient
+
+xlim([0 350])
+ylim([0 3000])
 
 figure(3);plot(x,y,'o',x,f,'-')
 legend('data',eqn)
