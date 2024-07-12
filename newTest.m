@@ -1,7 +1,6 @@
 clc;
 clear;
-% y = [4.0432,4.1073,4.0899,4.1319,4.2885,4.4305,4.5249,4.6172,4.6962,4.7235,4.5987,4.7927,4.895,4.9079];
-% x = [1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% extract
 T = readtable('C:\Users\Andrey\Documents\UKFRepo\UnscentedKalmanFilter\sims.csv');
 
 time = T.Time_s_;
@@ -10,8 +9,29 @@ z = T.PositionZ_m_;
 y = z;
 x = time;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% split at apogee
+% have to split at max not half
+
+%n = ceil(numel(z) / 2); % number of data entries
+[n,max] = max(z);
+
+% Split into two halves
+halves = mat2cell(y(:)', 1, [n, numel(y) - n]);
+halvesX = mat2cell(x(:)', 1, [n, numel(x) - n]);
+
+before = halves{1};
+beforeX = halvesX{1};
+
+after = halves{2};
+afterX = halvesX{2};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% fit halves
+
 % Fit a polynomial p of degree "degree" to the (x,y) data:
-degree = 15;
+degree = 3;
+
+beforePolyFit = polyfit(beforeX,before,degree);
+afterPolyFit = polyfit(afterX,after,degree);
+
 p = polyfit(x,y,degree);
 
 % Evaluate the fitted polynomial p and plot:
@@ -26,11 +46,20 @@ residuals = actual_values - predicted_values;
 eqn = poly_equation(flip(p)); % polynomial equation (string)
 Rsquared = my_Rsquared_coeff(y,f); % correlation coefficient
 
-xlim([0 350])
-ylim([0 3000])
+%figure(1);plot(x,y,'o',x,f,'-')
+figure(1);
 
-figure(3);plot(x,y,'o',x,f,'-')
-legend('data',eqn)
+plot(beforeX, before, 'b');
+hold on;
+plot(afterX, after, 'r');
+hold on;
+
+plot(beforeX, beforeFit, 'c');
+hold on;
+plot(afterX, afterFit, 'o');
+hold off;
+
+legend('data', eqn)
 title(['Data fit - R squared = ' num2str(Rsquared)]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% for residual graph
@@ -47,7 +76,7 @@ hold on;
 plot([1, length(residuals)], [0, 0], 'r--');
 hold off;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% getting R-sqr
 
 function Rsquared = my_Rsquared_coeff(data,data_fit)
     % R2 correlation coefficient computation
@@ -64,10 +93,13 @@ function Rsquared = my_Rsquared_coeff(data,data_fit)
     
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% equation writing
 function eqn = poly_equation(a_hat)
+
 eqn = " y = "+a_hat(1);
+
 for i = 2:(length(a_hat))
+
     if sign(a_hat(i))>0
         str = " + ";
     else
@@ -78,7 +110,9 @@ for i = 2:(length(a_hat))
     else
         eqn = eqn+str+a_hat(i)+"*x^"+(i-1)+" ";
     end
+
 end
 eqn = eqn+" ";
+
 end
         
