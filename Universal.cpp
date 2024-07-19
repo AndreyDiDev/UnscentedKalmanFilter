@@ -1,6 +1,8 @@
 // Integration of Everest with UKF
 #include "universal.hpp"
 
+#define REFRESH_RATE 20
+
 // Madgwick -> IMUs, Baros
 
 // UKF -> GPS, Dynamic Model
@@ -22,10 +24,36 @@ void update(){
 }
 
 void uniTransform(){
-    // measurement space
-    // Z = h (X) 
+    // measurement vector
+    // Z = h (X) = altitude 
+
+    //  N = number of dimensions
+
+    // number of s points = 2N +1
+
+    // first one is the mean 
+
+    // all others = xn,n + sqrt((N+k)Pn,n) for 1 to N
+
+    // change sign to negative when i = N+1, .... 2N
+
+    //  propagate s points measurment to state equation
+
+    // compute weigths oof s points
+
+    // w0 = k/(N+k) for the first mean s point
+
+    // wi = 1/2(N+k)
 
     // Zn = sigma(wi Zn)
+
+    // approx mean and covar pf output distribution
+
+    // mean = xhat n+1, n = sum 2N for wi Xn+1,n
+
+    // covar P n+1, n = sum to 2N for wi (Xn+1,n - xhatn+1,n)(same transposed)
+
+    // for gaussian distribution, set N + k = 3
 }
 
 void stateUpdate(){
@@ -45,3 +73,9 @@ void prediction(){
 int main(){
     
 }
+
+
+// have 10 sec zero offset procedure
+// then wait for sigificant movement to start UKF
+// then catch up to the logged but not submitted
+// to UKF meassurment for the start delay

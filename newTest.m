@@ -13,7 +13,7 @@ x = time;
 % have to split at max not half
 
 %n = ceil(numel(z) / 2); % number of data entries
-[n,max] = max(z);
+[max,n] = max(z);
 
 % Split into two halves
 halves = mat2cell(y(:)', 1, [n, numel(y) - n]);
@@ -54,9 +54,16 @@ hold on;
 plot(afterX, after, 'r');
 hold on;
 
-plot(beforeX, beforeFit, 'c');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% figure 2
+figure(2);
+
+% Evaluate the fitted polynomial p and plot:
+beforeFunc = polyval(beforePolyFit,beforeX);
+afterFunc = polyval(afterPolyFit, afterX);
+
+plot(beforeX, beforeFunc, 'c');
 hold on;
-plot(afterX, afterFit, 'o');
+plot(afterX, afterFunc, 'o');
 hold off;
 
 legend('data', eqn)
