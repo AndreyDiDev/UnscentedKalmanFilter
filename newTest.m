@@ -10,7 +10,6 @@ y = z;
 x = time;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% split at apogee
-% have to split at max not half
 
 %n = ceil(numel(z) / 2); % number of data entries
 [max,n] = max(z);
@@ -32,20 +31,31 @@ degree = 3;
 beforePolyFit = polyfit(beforeX,before,degree);
 afterPolyFit = polyfit(afterX,after,degree);
 
-p = polyfit(x,y,degree);
+%p = polyfit(x,y,degree);
 
 % Evaluate the fitted polynomial p and plot:
-f = polyval(p,x);
+%f = polyval(p,x);
 
+% Evaluate the fitted polynomial p and plot:
+beforeFunc = polyval(beforePolyFit,beforeX);
+afterFunc = polyval(afterPolyFit, afterX);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% calculate performance metrics
 % Calculate residuals
-actual_values= z;
-predicted_values = f;
+actual_values = z;
+before_predicted_values = beforeFunc;
+after_predicted_values = afterFunc;
 
-residuals = actual_values - predicted_values;
+before_residuals = actual_values - before_predicted_values;
+after_residuals = actual_values - after_predicted_values;
 
-eqn = poly_equation(flip(beforePolyFit)); % polynomial equation (string)
-Rsquared = my_Rsquared_coeff(y,f); % correlation coefficient
+before_Rsquared = my_Rsquared_coeff(z,beforeFunc); % correlation coefficient
+after_Rsquared = my_Rsquared_coeff(z,afterFunc); % correlation coefficient
 
+before_eqn = poly_equation(flip(beforePolyFit)); % polynomial equation (string)
+after_eqn = poly_equation(flip(afterPolyFit)); % polynomial equation (string)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Figure 1 - split
 %figure(1);plot(x,y,'o',x,f,'-')
 figure(1);
 
@@ -54,12 +64,8 @@ hold on;
 plot(afterX, after, 'r');
 hold on;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% figure 2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% figure 2 - both fits
 figure(2);
-
-% Evaluate the fitted polynomial p and plot:
-beforeFunc = polyval(beforePolyFit,beforeX);
-afterFunc = polyval(afterPolyFit, afterX);
 
 plot(beforeX, beforeFunc, 'c');
 hold on;
@@ -69,21 +75,24 @@ plot(time,z);
 hold off;
 
 legend('data', eqn)
-title(['Data fit - R squared = ' num2str(Rsquared)]);
+title(['Data fit - R squared = ' num2str(before_Rsquared) + ' After ' + num2str(after_Rsquared)]);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% for residual graph
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% fig 3 - for residual graph
 % Create a scatter plot
-figure;
-scatter(1:length(residuals), residuals, 'filled');
+figure(3);
+scatter(1:length(before_residuals), before_residuals, 'filled');
 xlabel('Observation Index');
 ylabel('Residuals');
 title('Residual Plot');
 grid on;
 
-% Optionally, add a horizontal line at y = 0
+% horizontal line at y = 0
 hold on;
-plot([1, length(residuals)], [0, 0], 'r--');
+plot([1, length(before_residuals)], [0, 0], 'r--');
 hold off;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Functions
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% getting R-sqr
 
