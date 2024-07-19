@@ -43,7 +43,7 @@ predicted_values = f;
 
 residuals = actual_values - predicted_values;
 
-eqn = poly_equation(flip(p)); % polynomial equation (string)
+eqn = poly_equation(flip(beforePolyFit)); % polynomial equation (string)
 Rsquared = my_Rsquared_coeff(y,f); % correlation coefficient
 
 %figure(1);plot(x,y,'o',x,f,'-')
@@ -64,6 +64,8 @@ afterFunc = polyval(afterPolyFit, afterX);
 plot(beforeX, beforeFunc, 'c');
 hold on;
 plot(afterX, afterFunc, 'o');
+hold on;
+plot(time,z);
 hold off;
 
 legend('data', eqn)
