@@ -15,11 +15,12 @@ filtered_time = filtered_Data.Var1;
 
 % baro
 baro = baro_Data.baro_pressure;
+h = atmospalt(baro);
 
 %Rsquared = my_Rsquared_coeff(true,filtered); % correlation coefficient
 subplot(1,1,1)
 title('Filtered vs True');
-plot(time,true,'b-',filtered_time,filtered,'r-')
+plot(time,true,'b-',filtered_time,filtered,'r-', filtered_time, h, 'c')
 
 %figure(1);
 %plot(time, true, 'c');
