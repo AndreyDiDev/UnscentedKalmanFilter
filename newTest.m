@@ -74,8 +74,9 @@ hold on;
 plot(time,z);
 hold off;
 
-legend('data', eqn)
-title(['Data fit - R squared = ' num2str(before_Rsquared) + ' After ' + num2str(after_Rsquared)]);
+legend('data', before_eqn);
+%title(['Data fit - R squared = ' num2str(before_Rsquared) + ' After ' + num2str(after_Rsquared)]);
+title(['Data fit - R squared = ' num2str(before_Rsquared) ' After ' num2str(after_Rsquared)]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% fig 3 - for residual graph
 % Create a scatter plot
@@ -89,6 +90,19 @@ grid on;
 % horizontal line at y = 0
 hold on;
 plot([1, length(before_residuals)], [0, 0], 'r--');
+hold off;
+
+%%%%%%%%%%%%%%% fig 4 - after residual 
+figure(4);
+scatter(1:length(after_residuals), after_residuals, 'filled');
+xlabel('Observation Index');
+ylabel('Residuals');
+title('After Apogee Residual Plot');
+grid on;
+
+% horizontal line at y = 0
+hold on;
+plot([1, length(after_residuals)], [0, 0], 'r--');
 hold off;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Functions
