@@ -7,3 +7,6 @@
 RegressionLearnerSessionAltitudeV(Quaternion, 3axis Velo, time...).mat
 RegressionLearnerSession.mat
 *.mat
+*.xml
+*.prj
+/resources
