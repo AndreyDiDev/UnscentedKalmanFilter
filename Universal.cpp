@@ -13,7 +13,7 @@
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void init(VectorXf &X0, MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
+void init(float X0, MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
 }
