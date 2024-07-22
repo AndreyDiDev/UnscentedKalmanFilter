@@ -75,6 +75,18 @@ void prediction(){
     // predict scenario t+1 based on interpolated values
 
 }
+
+// Function to interpolate between two nearest scenarios
+float interpolateScenarios(float x) {
+    float y1 = scenarios[0].evaluate(x);
+    float y2 = scenarios[1].evaluate(x);
+
+    // Simple average for interpolation
+    return (y1 + y2) / 2;
+}
+
+
+
 // R = control noise 
 // Q = measurement noise 
 
@@ -85,6 +97,9 @@ void setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
     this.Uaccel = filteredAcc;
     this.Uvelo = filteredVelo;
     this.Ualt = filteredAlt;
+
+    VectorXf X_in(3);
+    X_in << this.Uaccel, this.Uvelo, this.Ualt;
 }
 
 int main(){
