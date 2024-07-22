@@ -1,4 +1,8 @@
 // Integration of Everest with UKF
+
+#ifndef UNIVERSAL_CPP
+#define UNIVERSAL_CPP
+
 #include "universal.hpp"
 
 #define REFRESH_RATE 20
@@ -12,8 +16,6 @@
 void init(VectorXf &X0, MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
-    R = &
-
 }
 
 // Update Step-------------------------------------
@@ -66,13 +68,30 @@ void stateUpdate(){
 // Prediction--------------------------------------
 void prediction(){
 
+    // initialize scenario to default model-A(vg)
+    // given the Madgwick acc, velo, alt
+    // interpolate between 2 models 
+
+    // predict scenario t+1 based on interpolated values
+
 }
 // R = control noise 
 // Q = measurement noise 
 
+/**
+ * Take the filtered values from Everest filter 
+*/
+void setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
+    this.Uaccel = filteredAcc;
+    this.Uvelo = filteredVelo;
+    this.Ualt = filteredAlt;
+}
+
 int main(){
     
 }
+
+#endif
 
 
 // have 10 sec zero offset procedure

@@ -1,4 +1,9 @@
-#include "eigen-3.4.0\\eigen-3.4.0\\Eigen\\Cholesky"
+#ifndef UNIVERSAL_HPP
+#define UNIVERSAL_HPP
+
+
+#include "eigen-3.4.0\\Eigen\\Cholesky"
+#include "cmath"
 
 
 class Universal{
@@ -14,7 +19,12 @@ class Universal{
         void prediction();
 
     private:
+        float Uaccel;
+        float Ualt;
+        float Uvelo;
 
     protected:
 
 }
+
+#endif
