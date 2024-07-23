@@ -1,18 +1,19 @@
 #ifndef UNIVERSAL_HPP
 #define UNIVERSAL_HPP
 
-
 #include "eigen-3.4.0\\Eigen\\Cholesky"
-#include "cmath"
+#include <cmath>
+#include <string>
 
 struct Scenario {
     float acceleration;
     float velocity;
     float altitude;
+    std::string name;
 
 
-    Scenario(float acc, float vel, float alt)
-        : acceleration(acc), velocity(vel), altitude(alt) {}
+    Scenario(float acc, float vel, float alt, std::string Name)
+        : acceleration(acc), velocity(vel), altitude(alt), name(Name) {}
 
     // state machine on apogee
     float evaluateAcceleration(float time, bool beforeApogee) {

@@ -80,16 +80,29 @@ void prediction(){
 // Function to interpolate between two nearest scenarios
 float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
 
-    // Find the nearest 2 scenarios to the current state
+    // Find the nearest 2 scenarios to the current state for each measure
     auto predicted_acc = findNearestScenarios(scenarios, X_in(0), X_in(1), 'a');
     auto predicted_velo = findNearestScenarios(scenarios, X_in(0), X_in(1), 'v');
     auto predicted_alt = findNearestScenarios(scenarios, X_in(0), X_in(1), 'h');
 
     // Interpolate between the two scenarios
-    float interpolated_acc = interpolate(X_in(1), predicted_acc.acceleration, predicted_velo.acceleration);
+    float interpolated_acc = interpolate(X_in(1), predicted_acc[0].first, predicted_acc[1].first);
+    float interpolated_velo = interpolate(X_in(2), predicted_velo[0].first, predicted_velo[1].first);
+    float interpolated_alt = interpolate(X_in(3), predicted_alt[0].first, predicted_alt[1].first);
 
-    // Simple average for interpolation
-    return (y1 + y2) / 2;
+    X_in << interpolated_acc, interpolated_velo, interpolated_alt;
+
+    // Save the interpolated scenarios for the next iteration
+    Scenario scenario1(predicted_acc[0].second, predicted_velo[0].second, predicted_alt[0].second);
+    Scenario scenario2(predicted_acc[1].second, predicted_velo[1].second, predicted_alt[1].second);
+
+    // Store the scenarios in a vector or any other suitable data structure
+    std::vector<Scenario> nextScenarios;
+    nextScenarios.push_back(scenario1);
+    nextScenarios.push_back(scenario2);
+
+    return X_in;
+
 }
 
 
@@ -98,32 +111,56 @@ float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
  */
 vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, float x, float targetValue, char measure) {
     std::vector<std::pair<float, Scenario>> distances;
+    float value;
 
-    for (const auto& scenario : scenarios) {
-        float value;
-        switch (measure) {
-            case 'a': // Acceleration
-                value = scenario.evaluateAcceleration(x);
-                break;
-            case 'v': // Velocity
-                value = scenario.evaluateVelocity(x);
-                break;
-            case 'h': // Altitude
-                value = scenario.evaluateAltitude(x);
-                break;
-            default:
-                throw std::invalid_argument("Invalid measure type");
-        }
-
-        float distance = std::abs(value - targetValue);
-        distances.emplace_back(distance, scenario);
+    switch (measure) {
+        case 'a': // Acceleration
+            for (const auto& scenario : scenarios) {
+                float value = scenario.evaluateAcceleration(x);
+                float distance = std::abs(value - targetValue);
+                distances.emplace_back(distance, scenario);
+            }
+            break;
+        case 'v': // Velocity
+            for (const auto& scenario : scenarios) {
+                float value = scenario.evaluateVelocity(x);
+                float distance = std::abs(value - targetValue);
+                distances.emplace_back(distance, scenario);
+            }
+            break;
+        case 'h': // Altitude
+            for (const auto& scenario : scenarios) {
+                float value = scenario.evaluateAltitude(x);
+                float distance = std::abs(value - targetValue);
+                distances.emplace_back(distance, scenario);
+            }
+            break;
+        default:
+            throw std::invalid_argument("Invalid measure type");
     }
 
+    /**
+     * Sorts a vector of distances based on the first element of each pair in ascending order.
+     */
     std::sort(distances.begin(), distances.end(), [](const auto& a, const auto& b) {
         return a.first < b.first;
     });
 
-    return distances.front().second;
+    std::vector<std::pair<float, Scenario>> nearestScenarios;
+    nearestScenarios.push_back(distances[0]);
+    nearestScenarios.push_back(distances[1]);
+    
+    return nearestScenarios;
+}
+
+/**
+ * Interpolates between two values based on a given x value
+ */
+float interpolate(float x, float scenario1Distance, float scenario2Distance) {
+    double weight1 = 1.0 - (x - scenario1Distance) / (scenario2Distance - scenario1Distance);
+    double weight2 = 1.0 - weight1;
+
+    return weight1 * scenario1Distance + weight2 * scenario2Distance;
 }
 
 // R = control noise 
@@ -138,6 +175,8 @@ void setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
     this.Ualt = filteredAlt;
 
     VectorXf X_in(3);
+
+    /** X_in = [acceleration, velocity, altitude] */ 
     X_in << this.Uaccel, this.Uvelo, this.Ualt;
 }
 
