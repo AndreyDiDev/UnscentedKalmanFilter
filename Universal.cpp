@@ -101,6 +101,8 @@ float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
     nextScenarios.push_back(scenario1);
     nextScenarios.push_back(scenario2);
 
+    predictNextValues(time, nextScenarios);
+
     return X_in;
 
 }
@@ -109,28 +111,28 @@ float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
 /**
  * Given a list of scenarios, find the nearest 2 scenarios to a target value
  */
-vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, float x, float targetValue, char measure) {
+vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure) {
     std::vector<std::pair<float, Scenario>> distances;
     float value;
 
     switch (measure) {
         case 'a': // Acceleration
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateAcceleration(x);
+                float value = scenario.evaluateAcceleration(time, this.beforeApogee);
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
             break;
         case 'v': // Velocity
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateVelocity(x);
+                float value = scenario.evaluateVelocity(time, this.beforeApogee);
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
             break;
         case 'h': // Altitude
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateAltitude(x);
+                float value = scenario.evaluateAltitude(time, this.beforeApogee);
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
@@ -161,6 +163,28 @@ float interpolate(float x, float scenario1Distance, float scenario2Distance) {
     double weight2 = 1.0 - weight1;
 
     return weight1 * scenario1Distance + weight2 * scenario2Distance;
+}
+
+/**
+ * Predicts the next values based on the interpolated scenarios
+ */
+void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorX0 &X_in){
+    // evaluate scenarios at time t+1
+    firstAcc =  scenarios[0].evaluateAcceleration(time + timeStep, this.beforeApogee);
+    firstVelo=  scenarios[0].evaluateVelocity(time + timeStep,     this.beforeApogee);
+    firstAlt =  scenarios[0].evaluateAltitude(time + timeStep,     this.beforeApogee);
+
+    secondAcc = scenarios[1].evaluateAcceleration(time + timeStep,this.beforeApogee);
+    secondVelo= scenarios[1].evaluateVelocity(time + timeStep,    this.beforeApogee);
+    secondAlt = scenarios[1].evaluateAltitude(time + timeStep,    this.beforeApogee);
+
+    // interpolate between the two scenarios to get predicted values
+    float predicted_interpolated_acc = interpolate(X_in(1), firstAcc, secondAcc);
+    float predicted_interpolated_velo = interpolate(X_in(2), firstVelo, secondVelo);
+    float predicted_interpolated_alt = interpolate(X_in(3), firstAlt, secondAlt);
+
+    this.X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
+ 
 }
 
 // R = control noise 

@@ -64,6 +64,9 @@ class Universal{
         float Uvelo;
 
         VectorXf X_in;
+        VectorXf X_pred;
+
+        bool beforeApogee = false;
 
     protected:
 
