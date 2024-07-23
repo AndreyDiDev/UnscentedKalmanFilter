@@ -170,18 +170,18 @@ float interpolate(float x, float scenario1Distance, float scenario2Distance) {
  */
 void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorX0 &X_in){
     // evaluate scenarios at time t+1
-    firstAcc =  scenarios[0].evaluateAcceleration(time + timeStep, this.beforeApogee);
-    firstVelo=  scenarios[0].evaluateVelocity(time + timeStep,     this.beforeApogee);
-    firstAlt =  scenarios[0].evaluateAltitude(time + timeStep,     this.beforeApogee);
+    float firstAccDist  =  std::abs(X_in(1) - scenarios[0].evaluateAcceleration(time + this.timeStep, this.beforeApogee));
+    float firstVeloDist = std::abs(X_in(2) - scenarios[0].evaluateVelocity(time + this.timeStep,     this.beforeApogee));
+    float firstAltDist  =  std::abs(X_in(3) - scenarios[0].evaluateAltitude(time + this.timeStep,     this.beforeApogee));
 
-    secondAcc = scenarios[1].evaluateAcceleration(time + timeStep,this.beforeApogee);
-    secondVelo= scenarios[1].evaluateVelocity(time + timeStep,    this.beforeApogee);
-    secondAlt = scenarios[1].evaluateAltitude(time + timeStep,    this.beforeApogee);
+    float secondAccDist = std::abs(X_in(1) - scenarios[1].evaluateAcceleration(time + this.timeStep, this.beforeApogee));
+    float secondVeloDist= std::abs(X_in(2) - scenarios[1].evaluateVelocity(time + this.timeStep,    this.beforeApogee));
+    float secondAltDist = std::abs(X_in(3) - scenarios[1].evaluateAltitude(time + this.timeStep,    this.beforeApogee));
 
     // interpolate between the two scenarios to get predicted values
-    float predicted_interpolated_acc = interpolate(X_in(1), firstAcc, secondAcc);
-    float predicted_interpolated_velo = interpolate(X_in(2), firstVelo, secondVelo);
-    float predicted_interpolated_alt = interpolate(X_in(3), firstAlt, secondAlt);
+    float predicted_interpolated_acc = interpolate(X_in(1), firstAccDist, secondAccDist);
+    float predicted_interpolated_velo = interpolate(X_in(2), firstVeloDist, secondVeloDist);
+    float predicted_interpolated_alt = interpolate(X_in(3), firstAltDist, secondAltDist);
 
     this.X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
  

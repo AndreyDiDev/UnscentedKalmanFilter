@@ -66,6 +66,8 @@ class Universal{
         VectorXf X_in;
         VectorXf X_pred;
 
+        float timeStep = 0.1;
+
         bool beforeApogee = false;
 
     protected:
