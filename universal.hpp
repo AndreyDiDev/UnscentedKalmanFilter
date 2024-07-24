@@ -70,6 +70,10 @@ class Universal{
 
         bool beforeApogee = false;
 
+        std::vector<Scenario> scenarios;
+
+        std::vector<float> weights = {0.5, 0.5};
+
     protected:
 
 }

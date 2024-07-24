@@ -13,9 +13,11 @@
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void init(float X0, MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
+void init(VectorXf X0, MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
+
+    // X0 = [acceleration, velocity, altitude]
 }
 
 // Update Step-------------------------------------
@@ -70,6 +72,7 @@ void prediction(){
 
     // initialize scenario to default model-A(vg)
     // given the Madgwick acc, velo, alt
+
     // interpolate between 2 models
 
 
@@ -159,10 +162,32 @@ vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, fl
  * Interpolates between two values based on a given x value
  */
 float interpolate(float x, float scenario1Distance, float scenario2Distance) {
-    double weight1 = 1.0 - (x - scenario1Distance) / (scenario2Distance - scenario1Distance);
-    double weight2 = 1.0 - weight1;
+    // Get gains for scenarios
+    std::vector<float> gains = getGains(x, scenario1Distance, scenario2Distance);
 
-    return weight1 * scenario1Distance + weight2 * scenario2Distance;
+    double gain1 = weigths[0];
+    double gain2 = 1.0 - gain1;
+
+    return gain1 * scenario1Distance + gain2 * scenario2Distance;
+}
+
+/**
+ * Get gains for scenarios
+ */
+std::vector<float> getGains(float x, float scenario1Distance, float scenario2Distance) {
+    double gain1 = 1.0 / std::abs(x - scenario1Distance);
+    double gain2 = 1.0 - gain1;
+
+    this.gains = {gain1, gain2};
+
+    return {gain1, gain2};
+}
+
+/**
+ * Interpolates between two scenarios based on the gains
+ */
+float interpolateWithgains(float gain1, float gain2, float scenario1Distance, float scenario2Distance) {
+    return gain1 * scenario1Distance + gain2 * scenario2Distance;
 }
 
 /**
@@ -185,6 +210,18 @@ void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorX0 &X
 
     this.X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
  
+}
+
+/**
+ * Check if the rocket is before apogee, based on Everest filter values
+ */
+bool isBeforeApogee(float acceleration, float velocity, float altitude, float lastAltitude){
+
+    if(acceleration < 1 || velocity < 1 || altitude < lastAltitude){
+        return false;
+    }
+
+    return true;
 }
 
 // R = control noise 
