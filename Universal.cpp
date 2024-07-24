@@ -132,7 +132,7 @@ float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
 
 
 /**
- * Given a list of scenarios, find the nearest 2 scenarios to a target value
+ * @brief Given a list of scenarios, find the nearest 2 scenarios to a target value
  */
 vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure) {
     std::vector<std::pair<float, Scenario>> distances;
@@ -179,7 +179,7 @@ vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, fl
 }
 
 /**
- * Interpolates between two values based on a given x value
+ * @brief Interpolates between two values based on a given x value
  */
 float interpolate(float x, float scenario1Distance, float scenario2Distance) {
     // Get gains for scenarios
@@ -192,7 +192,7 @@ float interpolate(float x, float scenario1Distance, float scenario2Distance) {
 }
 
 /**
- * Get gains for scenarios
+ * @brief Get gains for scenarios
  */
 std::vector<float> getGains(float x, float scenario1Distance, float scenario2Distance) {
     double gain1 = 1.0 / std::abs(x - scenario1Distance);
@@ -204,14 +204,14 @@ std::vector<float> getGains(float x, float scenario1Distance, float scenario2Dis
 }
 
 /**
- * Interpolates between two scenarios based on the gains
+ * @brief Interpolates between two scenarios based on the gains
  */
 float interpolateWithgains(float gain1, float gain2, float scenario1Distance, float scenario2Distance) {
     return gain1 * scenario1Distance + gain2 * scenario2Distance;
 }
 
 /**
- * Predicts the next values based on the interpolated scenarios
+ * @brief Predicts the next values based on the interpolated scenarios
  */
 void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorX0 &X_in){
     // evaluate scenarios at time t+1
@@ -233,7 +233,7 @@ void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorX0 &X
 }
 
 /**
- * Check if the rocket is before apogee, based on Everest filter values
+ * @brief Check if the rocket is before apogee, based on Everest filter values
  */
 bool isBeforeApogee(float acceleration, float velocity, float altitude, float lastAltitude){
 
@@ -248,7 +248,7 @@ bool isBeforeApogee(float acceleration, float velocity, float altitude, float la
 // Q = measurement noise 
 
 /**
- * Take the filtered values from Everest filter 
+ * @brief Take the filtered values from Everest filter 
 */
 void setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
     this.Uaccel = filteredAcc;
