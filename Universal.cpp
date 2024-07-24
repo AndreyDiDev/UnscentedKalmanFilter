@@ -13,32 +13,50 @@
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void init(VectorXf X0, MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
+void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
 
+    // F is for state to next state transition 
+
+    // P0 = initial guess of state covariance matrix
+
+    // Q = process noise covariance matrix
+
+    // R = measurement noise covariance matrix
+
+    // Weights
+    int dim = 3;
+    int aplha = 0.001;
+    int beta = 2
+    int k = 3 - dim; // 3 dimensions
+    int lambda = std::pow(alpha, 2) * (dim + k) - dim;
+
+    w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
+    w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
+
+    Weights.setZero((2 * 3) + 1);   // 2N + 1
+    Weights(0) = w0_m;
+    Weights.setConstant(2 * dim, )
+
     // X0 = [acceleration, velocity, altitude]
+    this.X0 << Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt;
 }
 
 // Update Step-------------------------------------
 void update(){
-    uniTransform();
+    unscentedTransform();
 
     stateUpdate();
 }
 
-void uniTransform(){
+void unscentedTransform(){
     // measurement vector
     // Z = h (X) = altitude 
 
     //  N = number of dimensions
-
     // number of s points = 2N +1
-
-    // first one is the mean 
-
     // all others = xn,n + sqrt((N+k)Pn,n) for 1 to N
-
     // change sign to negative when i = N+1, .... 2N
 
     //  propagate s points measurment to state equation
