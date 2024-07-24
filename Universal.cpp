@@ -43,6 +43,11 @@ void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
 
     // X0 = [acceleration, velocity, altitude]
     this.X0 << Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt;
+
+    // Z_in = [GPS altitude]
+    this.Z << GPS::getAltitude();
+
+    unscentedTransform();
 }
 
 // Update Step-------------------------------------
