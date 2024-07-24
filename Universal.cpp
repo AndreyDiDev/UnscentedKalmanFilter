@@ -36,8 +36,10 @@ void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
 
     Weights.setZero((2 * 3) + 1);   // 2N + 1
+    Weights.setConstant(2 * dim + 1, w0_c);
     Weights(0) = w0_m;
-    Weights.setConstant(2 * dim, )
+
+    cout << "Weights: " << Weights << endl;
 
     // X0 = [acceleration, velocity, altitude]
     this.X0 << Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt;
@@ -139,21 +141,21 @@ vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, fl
     switch (measure) {
         case 'a': // Acceleration
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateAcceleration(time, this.beforeApogee);
+                float value = scenario.evaluateAcceleration(time, this.isBeforeApogee);
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
             break;
         case 'v': // Velocity
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateVelocity(time, this.beforeApogee);
+                float value = scenario.evaluateVelocity(time, this.isBeforeApogee);
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
             break;
         case 'h': // Altitude
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateAltitude(time, this.beforeApogee);
+                float value = scenario.evaluateAltitude(time, this.isBeforeApogee);
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
