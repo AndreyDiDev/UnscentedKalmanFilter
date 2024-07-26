@@ -36,6 +36,7 @@ void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     // Q = process noise covariance matrix
 
     // R = measurement noise covariance matrix
+    VectorXf Weights = new VectorXf();
 
     // Weights for sigma points
     float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
@@ -75,7 +76,7 @@ void unscentedTransform(){
 
     //  propagate s points measurment to state equation
 
-    // compute weigths oof s points
+    // compute weights of s points
 
     // w0 = k/(N+k) for the first mean s point
 
@@ -211,7 +212,7 @@ std::vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenario
     }
 
     /**
-     * Sorts a vector of distances based on the first element of each pair in ascending order.
+     * @brief Sorts a vector of distances based on the first element of each pair in ascending order.
      */
     std::sort(distances.begin(), distances.end(), [](const auto& a, const auto& b) {
         return a.first < b.first;
@@ -275,7 +276,6 @@ void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorX0 &X
     float predicted_interpolated_alt = interpolate(X_in(3), firstAltDist, secondAltDist);
 
     this.X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
- 
 }
 
 /**
