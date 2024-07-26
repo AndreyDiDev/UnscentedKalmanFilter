@@ -3,9 +3,21 @@
 #ifndef UNIVERSAL_CPP
 #define UNIVERSAL_CPP
 
-#include "universal.hpp"
+#include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\universal.hpp"
+
+#include <Eigen/Cholesky>
 
 #define REFRESH_RATE 20
+
+// Constants for the UKF
+#define N 3
+#define dim = 3;
+#define alpha = 0.1;
+#define beta = 2;
+#define k = 3 - dim; // 3 dimensions
+#define lambda = std::pow(alpha, 2) * (dim + k) - dim;
+
+using namespace Eigen;
 
 // Madgwick -> IMUs, Baros
 
@@ -25,21 +37,16 @@ void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
 
     // R = measurement noise covariance matrix
 
-    // Weights
-    int dim = 3;
-    int aplha = 0.001;
-    int beta = 2
-    int k = 3 - dim; // 3 dimensions
-    int lambda = std::pow(alpha, 2) * (dim + k) - dim;
+    // Weights for sigma points
+    float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
+    float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
 
-    w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
-    w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
-
+    MatrixXf Weights(2 * dim + 1);
     Weights.setZero((2 * 3) + 1);   // 2N + 1
     Weights.setConstant(2 * dim + 1, w0_c);
     Weights(0) = w0_m;
 
-    cout << "Weights: " << Weights << endl;
+    std::cout << "Weights: " << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
     this.X0 << Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt;
@@ -97,12 +104,46 @@ void prediction(){
 
     // initialize scenario to default model-A(vg)
     // given the Madgwick acc, velo, alt
+    MatrixXf sigmaPoints(2N+1, 3);
+    sigmaPoints.setZero(2N+1, 3);
+
+    // calculate sigma points
+    sigmaPoints = calculateSigmaPoints();
 
     // interpolate between 2 models
 
 
     // predict scenario t+1 based on interpolated values
 
+}
+
+MatrixXf calculateSigmaPoints(const MatrixXf &X0, const MatrixXf &P0) {
+    // Calculate the square root of (N+k) * P0 using Cholesky decomposition
+    float lambda = std::pow(alpha, 2) * (N + k) - N;
+
+    MatrixXf sqrtP0 = (N + k) * P0;
+
+    std::cout << "SqrtP0: " << sqrtP0 << std::endl;
+    std::cout << "l = " << lambda << std::endl;
+
+    LLT<MatrixXf> lltOfP0(sqrtP0); // Perform Cholesky decomposition
+    MatrixXf L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
+
+    // Initialize sigma points matrix
+    int dim = X0.rows();
+    MatrixXf sigmaPoints(2 * N + 1, dim);
+    sigmaPoints.setZero();
+
+    // Set the first sigma point
+    sigmaPoints.row(0) = X0;
+
+    // Set the remaining sigma points
+    for (int i = 0; i < N; ++i) {
+        sigmaPoints.row(i + 1) = X0 + L.col(i);
+        sigmaPoints.row(i + 1 + N) = X0 - L.col(i);
+    }
+
+    return sigmaPoints;
 }
 
 // Function to interpolate between two nearest scenarios
@@ -139,7 +180,7 @@ float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
 /**
  * @brief Given a list of scenarios, find the nearest 2 scenarios to a target value
  */
-vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure) {
+std::vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure) {
     std::vector<std::pair<float, Scenario>> distances;
     float value;
 
@@ -267,6 +308,44 @@ void setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
 }
 
 int main(){
+    // Initialize the state vector
+    // setStateVector(Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt);
+    // setStateVector(0, 0, 1000);
+
+    // // Initialize the covariance matrix
+    // MatrixXf P0(3, 3);
+    // P0 << 3, 0, 0,
+    //       0, 3, 0,
+    //       0, 0, 3;
+
+    // // Initialize the UKF
+    // init(P0, Z_in, R_in);
+
+    // // Update the UKF
+    // update();
+
+    // // Predict the next values
+    // prediction();
+
+    // Example usage
+    float k = 0.0;
+    float alpha = 0.1;
+    int beta = 2;
+
+    MatrixXf X0(3, 1);
+    X0 << 0.0873,
+          0;
+
+    MatrixXf P0(2, 2);
+    P0 << 5, 0,
+          0, 5;
+
+    MatrixXf sigmaPoints = calculateSigmaPoints(X0, P0, N, k, alpha, beta);
+
+    std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
+
+
+    return 0;
     
 }
 
