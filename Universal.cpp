@@ -118,7 +118,7 @@ void Universal::prediction(){
 }
 
 MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0) {
-    MatrixXf sigmaPoints(2,2);
+    // MatrixXf sigmaPoints(2,2);
     // Calculate the square root of (N+k) * P0 using Cholesky decomposition
     float lambda = std::pow(alpha, 2) * (N + k) - N;
 
@@ -127,11 +127,10 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0) {
     // sqrtP0 << 0, 0,
     //         0, 0;
 
-    MatrixXf P(3,3);
-    P << 6, 0, 0, 
-        0, 4, 0, 
-        0, 0, 7;
-    MatrixXf L( P.llt().matrixL());
+    MatrixXf P(2,2);
+    P << 5, 0, 
+        0, 5;
+    MatrixXf L( ((dim + k) *P).llt().matrixL());
     std::cout << L.col(1) << std::endl;
 
 
@@ -143,16 +142,16 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0) {
     // MatrixXf L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
 
     // // Initialize sigma points matrix
-    // MatrixXf sigmaPoints(2 * N + 1, dim);
-    // sigmaPoints.setZero();
+    MatrixXf sigmaPoints(dim, 2 * N + 1);
+    sigmaPoints.setZero();
 
     // // Set the first sigma point
-    // sigmaPoints.row(0) = X0;
+    sigmaPoints.col(0) = X0;
 
     // Set the remaining sigma points
-    for (int i = 0; i < N; ++i) {
-        // sigmaPoints.row(i + 1) = X0 + lltOfP0.col(i);
-        // sigmaPoints.row(i + 1 + N) = X0 - ltOfP0.col(i);
+    for (int i = 1; i < dim + 1; i++) {
+        sigmaPoints.row(i + 1) = X0 + L.col(i);
+        sigmaPoints.row(i + 1 + N) = X0 - L.col(i);
     }
 
     return sigmaPoints;
