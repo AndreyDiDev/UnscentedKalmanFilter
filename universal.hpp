@@ -2,6 +2,7 @@
 #define UNIVERSAL_HPP
 
 #include "C:\\Users\\Andrey\\Downloads\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Cholesky"
+#include "C:\\Users\\Andrey\\Downloads\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Dense"
 #include <cmath>
 #include <string>
 #include <vector>
@@ -79,7 +80,7 @@ struct Scenario {
 
 class Universal{
     public:
-        void init(MatrixXd &X0, MatrixXd &P0, VectorXf &Z_in);
+        void init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in);
 
         void update();
 

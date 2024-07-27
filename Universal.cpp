@@ -1,4 +1,5 @@
 #include "universal.hpp"
+#include "C:\\Users\\Andrey\\Downloads\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Dense"
 // #include "everestTaskHPP.hpp"
 
 #ifndef UNIVERSAL_CPP
@@ -9,8 +10,8 @@
 #define REFRESH_RATE 20
 
 // Constants for the UKF
-#define N 3
-#define dim 3
+#define N 2
+#define dim 2
 #define alpha 0.1
 #define beta 2
 #define k 3 - dim // 3 dimensions
@@ -23,11 +24,11 @@ using namespace Eigen;
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void Universal::init(MatrixXd &X0, MatrixXd &P0, VectorXf &Z_in){
+void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
 
-    // F is for state to next state transition 
+    // F is for state to next state transition
 
     // P0 = initial guess of state covariance matrix
 
@@ -36,22 +37,22 @@ void Universal::init(MatrixXd &X0, MatrixXd &P0, VectorXf &Z_in){
     // R = measurement noise covariance matrix
 
     // Weights for sigma points
-    float lambda = std::pow(alpha, 2) * (dim + k) - dim;
-    float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
-    float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
+    // float lambda = std::pow(alpha, 2) * (dim + k) - dim;
+    // float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
+    // float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
 
-    MatrixXd Weights(2 * dim + 1);
-    Weights.setZero((2 * 3) + 1);   // 2N + 1
-    Weights.setConstant(2 * dim + 1, w0_c);
-    Weights(0) = w0_m;
+    // MatrixXf Weights(2 * dim + 1);
+    // Weights.setZero((2 * 3) + 1);   // 2N + 1
+    // Weights.setConstant(2 * dim + 1, w0_c);
+    // Weights(0) = w0_m;
 
-    std::cout << "Weights: " << Weights << std::endl;
+    // std::cout << "Weights: " << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
-    X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
+    // X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
 
-    // Z_in = [GPS altitude]
-    Z_in << this->getGPSAlt();
+    // // Z_in = [GPS altitude]
+    // Z_in << this->getGPSAlt();
 
     unscentedTransform();
 }
@@ -65,7 +66,7 @@ void Universal::update(){
 
 void Universal::unscentedTransform(){
     // measurement vector
-    // Z = h (X) = altitude 
+    // Z = h (X) = altitude
 
     //  N = number of dimensions
     // number of s points = 2N +1
@@ -103,8 +104,8 @@ void Universal::prediction(){
 
     // initialize scenario to default model-A(vg)
     // given the Madgwick acc, velo, alt
-    MatrixXd sigmaPoints(2*N+1, 3);
-    sigmaPoints.setZero(2*N+1, 3);
+    // MatrixXf sigmaPoints(2*N+1, 3);
+    // sigmaPoints.setZero(2*N+1, 3);
 
     // calculate sigma points
     // sigmaPoints = calculateSigmaPoints();
@@ -116,29 +117,42 @@ void Universal::prediction(){
 
 }
 
-MatrixXd calculateSigmaPoints(const MatrixXd &X0, const MatrixXd &P0) {
+MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0) {
+    MatrixXf sigmaPoints(2,2);
     // Calculate the square root of (N+k) * P0 using Cholesky decomposition
     float lambda = std::pow(alpha, 2) * (N + k) - N;
 
-    MatrixXd sqrtP0 = (N + k) * P0;
+    // MatrixXf sqrtP0 = (N + k) * P0;
+    // MatrixXf sqrtP0(2,2);
+    // sqrtP0 << 0, 0,
+    //         0, 0;
 
-    std::cout << "SqrtP0: " << sqrtP0 << std::endl;
+    MatrixXf P(3,3);
+    P << 6, 0, 0, 
+        0, 4, 0, 
+        0, 0, 7;
+    MatrixXf L( P.llt().matrixL());
+    std::cout << L.col(1) << std::endl;
+
+
+    std::cout << "calc sPts" << std::endl;
+    // std::cout << "SqrtP0: " << sqrtP0 << std::endl;
     std::cout << "l = " << lambda << std::endl;
 
-    LLT<MatrixXd> lltOfP0(sqrtP0); // Perform Cholesky decomposition
-    MatrixXd L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
+    // LDLT<MatrixXf> lltOfP0(P0); // Perform Cholesky decomposition
+    // MatrixXf L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
 
-    // Initialize sigma points matrix
-    MatrixXd sigmaPoints(2 * N + 1, dim);
-    sigmaPoints.setZero();
+    // // Initialize sigma points matrix
+    // MatrixXf sigmaPoints(2 * N + 1, dim);
+    // sigmaPoints.setZero();
 
-    // Set the first sigma point
-    sigmaPoints.row(0) = X0;
+    // // Set the first sigma point
+    // sigmaPoints.row(0) = X0;
 
     // Set the remaining sigma points
     for (int i = 0; i < N; ++i) {
-        sigmaPoints.row(i + 1) = X0 + L.col(i);
-        sigmaPoints.row(i + 1 + N) = X0 - L.col(i);
+        // sigmaPoints.row(i + 1) = X0 + lltOfP0.col(i);
+        // sigmaPoints.row(i + 1 + N) = X0 - ltOfP0.col(i);
     }
 
     return sigmaPoints;
@@ -222,7 +236,7 @@ std::vector<std::pair<float, Scenario>> Universal::findNearestScenarios(const st
     std::vector<std::pair<float, Scenario>> nearestScenarios;
     nearestScenarios.push_back(distances[0]);
     nearestScenarios.push_back(distances[1]);
-    
+
     return nearestScenarios;
 }
 
@@ -276,7 +290,7 @@ void Universal::predictNextValues(float time, std::vector<Scenario> &scenarios, 
     float predicted_interpolated_velo = interpolate(X_in(2), firstVeloDist, secondVeloDist);
     float predicted_interpolated_alt = interpolate(X_in(3), firstAltDist, secondAltDist);
 
-    this->X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
+    // this->X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
 }
 
 /**
@@ -291,11 +305,11 @@ bool isBeforeApogee(float acceleration, float velocity, float altitude, float la
     return true;
 }
 
-// R = control noise 
-// Q = measurement noise 
+// R = control noise
+// Q = measurement noise
 
 /**
- * @brief Take the filtered values from Everest filter 
+ * @brief Take the filtered values from Everest filter
 */
 void Universal::setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
     this->Uaccel = filteredAcc;
@@ -304,7 +318,7 @@ void Universal::setStateVector(float filteredAcc, float filteredVelo, float filt
 
     VectorXf X_in(3);
 
-    /** X_in = [acceleration, velocity, altitude] */ 
+    /** X_in = [acceleration, velocity, altitude] */
     X_in << this->Uaccel, this->Uvelo, this->Ualt;
 }
 
@@ -333,21 +347,21 @@ int main(){
     // float alpha = 0.1;
     // int beta = 2;
 
-    MatrixXd X0(3, 1);
+    MatrixXf X0(2, 1);
     X0 << 0.0873,
           0;
 
-    MatrixXd P0(2, 2);
+    MatrixXf P0(2, 2);
     P0 << 5, 0,
           0, 5;
 
-    MatrixXd sigmaPoints = calculateSigmaPoints(X0, P0);
+    MatrixXf sigmaPoints = calculateSigmaPoints(X0, P0);
 
-    // std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
+    std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
 
 
     return 0;
-    
+
 }
 
 #endif

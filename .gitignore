@@ -12,3 +12,4 @@ RegressionLearnerSession.mat
 /resources
 /eigen-3.4.0
 .vscode/settings.json
+*.exe
