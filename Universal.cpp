@@ -1,11 +1,10 @@
-// Integration of Everest with UKF
+#include "universal.hpp"
+#include "everestTaskHPP.hpp"
 
 #ifndef UNIVERSAL_CPP
 #define UNIVERSAL_CPP
 
-#include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\universal.hpp"
-
-#include <Eigen/Cholesky>
+// Integration of Everest with UKF
 
 #define REFRESH_RATE 20
 
@@ -24,7 +23,7 @@ using namespace Eigen;
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
+void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
 
@@ -49,10 +48,10 @@ void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     std::cout << "Weights: " << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
-    this.X0 << Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt;
+    X0 << this->getFAccel(), this->getFVelo(), filteredAlt;
 
     // Z_in = [GPS altitude]
-    this.Z << GPS::getAltitude();
+    Z << GPS::getAltitude();
 
     unscentedTransform();
 }
@@ -258,7 +257,7 @@ float interpolateWithgains(float gain1, float gain2, float scenario1Distance, fl
 /**
  * @brief Predicts the next values based on the interpolated scenarios
  */
-void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorX0 &X_in){
+void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorXf &X_in){
     // evaluate scenarios at time t+1
     float firstAccDist  =  std::abs(X_in(1) - scenarios[0].evaluateAcceleration(time + this.timeStep, this.beforeApogee));
     float firstVeloDist = std::abs(X_in(2) - scenarios[0].evaluateVelocity(time + this.timeStep,     this.beforeApogee));
