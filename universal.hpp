@@ -7,7 +7,10 @@
 #include <vector>
 #include <iostream>
 
+
 bool isBeforeApogeeBool = false;
+
+using namespace Eigen;
 
 /**
  * @brief Scenario struct to store the coefficients of the 3rd degree polynomial for acceleration, velocity and altitude
@@ -57,6 +60,7 @@ struct Scenario {
             // evaluate velocity at timestep after apogee by using the coefficients at 3rd degree polynomial
             return afterApogeeVelo[0] * pow(time, 3) + afterApogeeVelo[1] * pow(time, 2) 
             + afterApogeeVelo[2] * time + afterApogeeVelo[3];
+        }
     }
 
     float evaluateAltitude(float time){
@@ -70,23 +74,22 @@ struct Scenario {
         }
     }
     
-    }
 };
 
 
 class Universal{
     public:
-        void init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in);
+        void init(MatrixXd &X0, MatrixXd &P0, VectorXf &Z_in);
 
         void update();
 
-        void uniTransform();
+        void unscentedTransform();
 
         void stateUpdate();
 
         void prediction();
 
-        float fAccel, fVelo, fAlt;
+        float fAccel, fVelo, fAlt, GPS_Alt;
 
         void setFilteredValues(float FAccel, float fVelo, float fAlt);
 
@@ -94,6 +97,23 @@ class Universal{
 
         float getFVelo();
 
+        float getFAccel();
+
+        float getGPSAlt();
+
+        void setAlt(float gps_alt);
+
+        std::vector<float> getGains(float x, float scenario1Distance, float scenario2Distance);
+
+        void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorXf &X_in);
+
+        void setStateVector(float filteredAcc, float filteredVelo, float filteredAlt);
+
+        float interpolate(float x, float scenario1Distance, float scenario2Distance);
+
+        std::vector<std::pair<float, Scenario>> findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure);
+
+        float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios);
     private:
         float Uaccel;
         float Ualt;
@@ -132,6 +152,14 @@ float Universal::getFVelo(){
 
 float Universal::getFAccel(){
     return this->fAccel;
+}
+
+void Universal::setAlt(float gps_alt){
+    this->GPS_Alt = gps_alt;
+}
+
+float Universal::getGPSAlt(){
+    return this->GPS_Alt;
 }
 
 #endif

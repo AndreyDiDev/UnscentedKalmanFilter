@@ -1,5 +1,5 @@
 #include "universal.hpp"
-#include "everestTaskHPP.hpp"
+// #include "everestTaskHPP.hpp"
 
 #ifndef UNIVERSAL_CPP
 #define UNIVERSAL_CPP
@@ -23,7 +23,7 @@ using namespace Eigen;
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
+void Universal::init(MatrixXd &X0, MatrixXd &P0, VectorXf &Z_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
 
@@ -40,7 +40,7 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
     float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
 
-    MatrixXf Weights(2 * dim + 1);
+    MatrixXd Weights(2 * dim + 1);
     Weights.setZero((2 * 3) + 1);   // 2N + 1
     Weights.setConstant(2 * dim + 1, w0_c);
     Weights(0) = w0_m;
@@ -48,22 +48,22 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     std::cout << "Weights: " << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
-    X0 << this->getFAccel(), this->getFVelo(), filteredAlt;
+    X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
 
     // Z_in = [GPS altitude]
-    Z << GPS::getAltitude();
+    Z_in << this->getGPSAlt();
 
     unscentedTransform();
 }
 
 // Update Step-------------------------------------
-void update(){
+void Universal::update(){
     unscentedTransform();
 
     stateUpdate();
 }
 
-void unscentedTransform(){
+void Universal::unscentedTransform(){
     // measurement vector
     // Z = h (X) = altitude 
 
@@ -91,7 +91,7 @@ void unscentedTransform(){
     // for gaussian distribution, set N + k = 3
 }
 
-void stateUpdate(){
+void Universal::stateUpdate(){
     // Xn = Xn-1 + K (Zn - EstZn)
 }
 // ------------------------------------------------
@@ -99,15 +99,15 @@ void stateUpdate(){
 
 
 // Prediction--------------------------------------
-void prediction(){
+void Universal::prediction(){
 
     // initialize scenario to default model-A(vg)
     // given the Madgwick acc, velo, alt
-    MatrixXf sigmaPoints(2*N+1, 3);
+    MatrixXd sigmaPoints(2*N+1, 3);
     sigmaPoints.setZero(2*N+1, 3);
 
     // calculate sigma points
-    sigmaPoints = calculateSigmaPoints();
+    // sigmaPoints = calculateSigmaPoints();
 
     // interpolate between 2 models
 
@@ -116,20 +116,20 @@ void prediction(){
 
 }
 
-MatrixXf calculateSigmaPoints(const MatrixXf &X0, const MatrixXf &P0) {
+MatrixXd calculateSigmaPoints(const MatrixXd &X0, const MatrixXd &P0) {
     // Calculate the square root of (N+k) * P0 using Cholesky decomposition
     float lambda = std::pow(alpha, 2) * (N + k) - N;
 
-    MatrixXf sqrtP0 = (N + k) * P0;
+    MatrixXd sqrtP0 = (N + k) * P0;
 
     std::cout << "SqrtP0: " << sqrtP0 << std::endl;
     std::cout << "l = " << lambda << std::endl;
 
-    LLT<MatrixXf> lltOfP0(sqrtP0); // Perform Cholesky decomposition
-    MatrixXf L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
+    LLT<MatrixXd> lltOfP0(sqrtP0); // Perform Cholesky decomposition
+    MatrixXd L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
 
     // Initialize sigma points matrix
-    MatrixXf sigmaPoints(2 * N + 1, dim);
+    MatrixXd sigmaPoints(2 * N + 1, dim);
     sigmaPoints.setZero();
 
     // Set the first sigma point
@@ -145,7 +145,7 @@ MatrixXf calculateSigmaPoints(const MatrixXf &X0, const MatrixXf &P0) {
 }
 
 // Function to interpolate between two nearest scenarios
-float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
+float Universal::interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
 
     // Find the nearest 2 scenarios to the current state for each measure
     auto predicted_acc = findNearestScenarios(scenarios, X_in(0), X_in(1), 'a');
@@ -153,24 +153,25 @@ float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
     auto predicted_alt = findNearestScenarios(scenarios, X_in(0), X_in(1), 'h');
 
     // Interpolate between the two scenarios
-    float interpolated_acc = interpolate(X_in(1), predicted_acc[0].first, predicted_acc[1].first);
-    float interpolated_velo = interpolate(X_in(2), predicted_velo[0].first, predicted_velo[1].first);
-    float interpolated_alt = interpolate(X_in(3), predicted_alt[0].first, predicted_alt[1].first);
+    // float interpolated_acc = interpolate(X_in(1), predicted_acc[0].first, predicted_acc[1].first);
+    // float interpolated_velo = interpolate(X_in(2), predicted_velo[0].first, predicted_velo[1].first);
+    // float interpolated_alt = interpolate(X_in(3), predicted_alt[0].first, predicted_alt[1].first);
 
-    X_in << interpolated_acc, interpolated_velo, interpolated_alt;
+    // X_in << interpolated_acc, interpolated_velo, interpolated_alt;
 
-    // Save the interpolated scenarios for the next iteration
-    Scenario scenario1(predicted_acc[0].second, predicted_velo[0].second, predicted_alt[0].second);
-    Scenario scenario2(predicted_acc[1].second, predicted_velo[1].second, predicted_alt[1].second);
+    // // Save the interpolated scenarios for the next iteration
+    // Scenario scenario1(predicted_acc[0].second, predicted_velo[0].second, predicted_alt[0].second);
+    // Scenario scenario2(predicted_acc[1].second, predicted_velo[1].second, predicted_alt[1].second);
 
     // Store the scenarios in a vector or any other suitable data structure
     std::vector<Scenario> nextScenarios;
-    nextScenarios.push_back(scenario1);
-    nextScenarios.push_back(scenario2);
+    // nextScenarios.push_back(scenario1);
+    // nextScenarios.push_back(scenario2);
 
-    predictNextValues(time, nextScenarios);
+    // predictNextValues(time, nextScenarios);
 
-    return X_in;
+    // return X_in;
+    return 0;
 
 }
 
@@ -178,28 +179,31 @@ float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
 /**
  * @brief Given a list of scenarios, find the nearest 2 scenarios to a target value
  */
-std::vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure) {
+std::vector<std::pair<float, Scenario>> Universal::findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure) {
     std::vector<std::pair<float, Scenario>> distances;
     float value;
 
     switch (measure) {
         case 'a': // Acceleration
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateAcceleration(time, this.isBeforeApogee);
+                // float value = scenario.evaluateAcceleration(time, this.isBeforeApogee);
+                float value = 0;
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
             break;
         case 'v': // Velocity
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateVelocity(time, this.isBeforeApogee);
+                // float value = scenario.evaluateVelocity(time, this.isBeforeApogee);
+                float value = 0;
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
             break;
         case 'h': // Altitude
             for (const auto& scenario : scenarios) {
-                float value = scenario.evaluateAltitude(time, this.isBeforeApogee);
+                // float value = scenario.evaluateAltitude(time, this.isBeforeApogee);
+                float value  =0;
                 float distance = std::abs(value - targetValue);
                 distances.emplace_back(distance, scenario);
             }
@@ -225,7 +229,7 @@ std::vector<Scenario> findNearestScenarios(const std::vector<Scenario>& scenario
 /**
  * @brief Interpolates between two values based on a given x value
  */
-float interpolate(float x, float scenario1Distance, float scenario2Distance) {
+float Universal::interpolate(float x, float scenario1Distance, float scenario2Distance) {
     // Get gains for scenarios
     std::vector<float> gains = getGains(x, scenario1Distance, scenario2Distance);
 
@@ -238,11 +242,11 @@ float interpolate(float x, float scenario1Distance, float scenario2Distance) {
 /**
  * @brief Get gains for scenarios
  */
-std::vector<float> getGains(float x, float scenario1Distance, float scenario2Distance) {
-    double gain1 = 1.0 / std::abs(x - scenario1Distance);
-    double gain2 = 1.0 - gain1;
+std::vector<float> Universal::getGains(float x, float scenario1Distance, float scenario2Distance) {
+    float gain1 = 1.0 / std::abs(x - scenario1Distance);
+    float gain2 = 1.0 - gain1;
 
-    this.gains = {gain1, gain2};
+    this->weights = {gain1, gain2};
 
     return {gain1, gain2};
 }
@@ -257,22 +261,22 @@ float interpolateWithgains(float gain1, float gain2, float scenario1Distance, fl
 /**
  * @brief Predicts the next values based on the interpolated scenarios
  */
-void predictNextValues(float time, std::vector<Scenario> &scenarios, VectorXf &X_in){
+void Universal::predictNextValues(float time, std::vector<Scenario> &scenarios, VectorXf &X_in){
     // evaluate scenarios at time t+1
-    float firstAccDist  =  std::abs(X_in(1) - scenarios[0].evaluateAcceleration(time + this.timeStep, this.beforeApogee));
-    float firstVeloDist = std::abs(X_in(2) - scenarios[0].evaluateVelocity(time + this.timeStep,     this.beforeApogee));
-    float firstAltDist  =  std::abs(X_in(3) - scenarios[0].evaluateAltitude(time + this.timeStep,     this.beforeApogee));
+    float firstAccDist  =  std::abs(X_in(1) - scenarios[0].evaluateAcceleration(time + this->timeStep));
+    float firstVeloDist = std::abs(X_in(2) - scenarios[0].evaluateVelocity(time + this->timeStep));
+    float firstAltDist  =  std::abs(X_in(3) - scenarios[0].evaluateAltitude(time + this->timeStep));
 
-    float secondAccDist = std::abs(X_in(1) - scenarios[1].evaluateAcceleration(time + this.timeStep, this.beforeApogee));
-    float secondVeloDist= std::abs(X_in(2) - scenarios[1].evaluateVelocity(time + this.timeStep,    this.beforeApogee));
-    float secondAltDist = std::abs(X_in(3) - scenarios[1].evaluateAltitude(time + this.timeStep,    this.beforeApogee));
+    float secondAccDist = std::abs(X_in(1) - scenarios[1].evaluateAcceleration(time + this->timeStep));
+    float secondVeloDist= std::abs(X_in(2) - scenarios[1].evaluateVelocity(time + this->timeStep));
+    float secondAltDist = std::abs(X_in(3) - scenarios[1].evaluateAltitude(time + this->timeStep));
 
     // interpolate between the two scenarios to get predicted values
     float predicted_interpolated_acc = interpolate(X_in(1), firstAccDist, secondAccDist);
     float predicted_interpolated_velo = interpolate(X_in(2), firstVeloDist, secondVeloDist);
     float predicted_interpolated_alt = interpolate(X_in(3), firstAltDist, secondAltDist);
 
-    this.X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
+    this->X_pred << predicted_interpolated_acc, predicted_interpolated_velo, predicted_interpolated_alt;
 }
 
 /**
@@ -293,15 +297,15 @@ bool isBeforeApogee(float acceleration, float velocity, float altitude, float la
 /**
  * @brief Take the filtered values from Everest filter 
 */
-void setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
-    this.Uaccel = filteredAcc;
-    this.Uvelo = filteredVelo;
-    this.Ualt = filteredAlt;
+void Universal::setStateVector(float filteredAcc, float filteredVelo, float filteredAlt){
+    this->Uaccel = filteredAcc;
+    this->Uvelo = filteredVelo;
+    this->Ualt = filteredAlt;
 
     VectorXf X_in(3);
 
     /** X_in = [acceleration, velocity, altitude] */ 
-    X_in << this.Uaccel, this.Uvelo, this.Ualt;
+    X_in << this->Uaccel, this->Uvelo, this->Ualt;
 }
 
 int main(){
@@ -325,21 +329,21 @@ int main(){
     // prediction();
 
     // Example usage
-    float k = 0.0;
-    float alpha = 0.1;
-    int beta = 2;
+    // float k = 0.0;
+    // float alpha = 0.1;
+    // int beta = 2;
 
-    MatrixXf X0(3, 1);
+    MatrixXd X0(3, 1);
     X0 << 0.0873,
           0;
 
-    MatrixXf P0(2, 2);
+    MatrixXd P0(2, 2);
     P0 << 5, 0,
           0, 5;
 
-    MatrixXf sigmaPoints = calculateSigmaPoints(X0, P0, N, k, alpha, beta);
+    MatrixXd sigmaPoints = calculateSigmaPoints(X0, P0);
 
-    std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
+    // std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
 
 
     return 0;
