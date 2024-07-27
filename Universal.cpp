@@ -11,11 +11,10 @@
 
 // Constants for the UKF
 #define N 3
-#define dim = 3;
-#define alpha = 0.1;
-#define beta = 2;
-#define k = 3 - dim; // 3 dimensions
-#define lambda = std::pow(alpha, 2) * (dim + k) - dim;
+#define dim 3
+#define alpha 0.1
+#define beta 2
+#define k 3 - dim // 3 dimensions
 
 using namespace Eigen;
 
@@ -36,9 +35,9 @@ void init(MatrixXf &P0, VectorXf &Z_in, MatrixXf &R_in){
     // Q = process noise covariance matrix
 
     // R = measurement noise covariance matrix
-    VectorXf Weights = new VectorXf();
 
     // Weights for sigma points
+    float lambda = std::pow(alpha, 2) * (dim + k) - dim;
     float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
     float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
 
@@ -105,8 +104,8 @@ void prediction(){
 
     // initialize scenario to default model-A(vg)
     // given the Madgwick acc, velo, alt
-    MatrixXf sigmaPoints(2N+1, 3);
-    sigmaPoints.setZero(2N+1, 3);
+    MatrixXf sigmaPoints(2*N+1, 3);
+    sigmaPoints.setZero(2*N+1, 3);
 
     // calculate sigma points
     sigmaPoints = calculateSigmaPoints();
@@ -131,7 +130,6 @@ MatrixXf calculateSigmaPoints(const MatrixXf &X0, const MatrixXf &P0) {
     MatrixXf L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
 
     // Initialize sigma points matrix
-    int dim = X0.rows();
     MatrixXf sigmaPoints(2 * N + 1, dim);
     sigmaPoints.setZero();
 
@@ -232,7 +230,7 @@ float interpolate(float x, float scenario1Distance, float scenario2Distance) {
     // Get gains for scenarios
     std::vector<float> gains = getGains(x, scenario1Distance, scenario2Distance);
 
-    double gain1 = weigths[0];
+    double gain1 = gains[0];
     double gain2 = 1.0 - gain1;
 
     return gain1 * scenario1Distance + gain2 * scenario2Distance;
