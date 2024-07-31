@@ -14,6 +14,16 @@ bool isBeforeApogeeBool = false;
 using namespace Eigen;
 
 /**
+ * Keeps track of the kinematics of Universal. Updated
+ * with UKF state update
+ */
+typedef struct{
+    float initialVelo;
+    float initialAlt;
+    float finalAltitude;
+} kinematics;
+
+/**
  * @brief Scenario struct to store the coefficients of the 3rd degree polynomial for acceleration, velocity and altitude
  *      before and after apogee, also evaluates the acceleration, velocity and altitude at a given time
  */
@@ -148,6 +158,10 @@ class Universal{
         MatrixXf X; // state vector
         MatrixXf Z;
 
+        kinematics Kinematics;
+
+        kinematics* getKinematics();
+
 
 };
 
@@ -179,6 +193,10 @@ void Universal::setAlt(float gps_alt){
 
 float Universal::getGPSAlt(){
     return this->GPS_Alt;
+}
+
+kinematics* Universal::getKinematics(){
+    return &Kinematics;
 }
 
 #endif
