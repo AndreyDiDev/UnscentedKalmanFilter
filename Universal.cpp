@@ -46,6 +46,8 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     Weights.setConstant(2 * dim + 1, w0_c);
     Weights(0) = w0_m;
 
+    this->WeightsUKF = Weights;
+
     std::cout << "Weights: " << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
@@ -133,8 +135,9 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
     MatrixXf P(2,2);
     P << 5, 0, 
         0, 5;
+
     MatrixXf L( ((dim + k) *P).llt().matrixL());
-    std::cout << L << std::endl;
+    std::cout << L.col(0) << std::endl;
 
 
     std::cout << "calc sPts" << std::endl;
@@ -162,7 +165,7 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
 
     // propagate sigma points through the dynamic model
     for(int i = 0; i < (2 * N) + 1; i++){
-        sigmaPoints.col(i) = dynamicModel(sigmaPoints.col(i));
+        // sigmaPoints.col(i) = dynamicModel(sigmaPoints.col(i));
     }
 
     // calculate the mean and covariance of the sigma points
@@ -283,7 +286,7 @@ std::vector<float> Universal::getGains(float x, float scenario1Distance, float s
     float gain1 = 1.0 / std::abs(x - scenario1Distance);
     float gain2 = 1.0 - gain1;
 
-    this->weights = {gain1, gain2};
+    this->scenarioWeights = {gain1, gain2};
 
     return {gain1, gain2};
 }
@@ -375,11 +378,6 @@ int main(){
     // // Predict the next values
     // prediction();
 
-    // Example usage
-    // float k = 0.0;
-    // float alpha = 0.1;
-    // int beta = 2;
-
     MatrixXf X0(2, 1);
     X0 << 0.0873,
           0;
@@ -388,9 +386,17 @@ int main(){
     P0 << 5, 0,
           0, 5;
 
-    MatrixXf sigmaPoints = calculateSigmaPoints(X0, P0);
+    VectorXf Z_in;
+    Z_in << 0;
+
+    std::cout << "X0:\n" << X0 << std::endl;
+
+    MatrixXf sigmaPoints = calculateSigmaPoints(X0, P0, P0, P0, P0);
 
     std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
+
+    Universal uni = Universal();
+    uni.init(X0, P0, Z_in);
 
 
     return 0;

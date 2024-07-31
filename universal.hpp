@@ -138,6 +138,7 @@ class Universal{
         MatrixXf Q;
         MatrixXf projectError;
         MatrixXf X0;
+        MatrixXf WeightsUKF;
 
         MatrixXf F; // state to next state transition matrix
         MatrixXf H; // state to measurement matrix
@@ -145,6 +146,7 @@ class Universal{
         MatrixXf K; // Kalman gain matrix
 
         MatrixXf X; // state vector
+        MatrixXf Z;
 
 
 };
