@@ -343,6 +343,16 @@ void Universal::setStateVector(float filteredAcc, float filteredVelo, float filt
     X_in << this->Uaccel, this->Uvelo, this->Ualt;
 }
 
+// prediction step based on the dynamic model
+MatrixXf dynamicModel(MatrixXf &X){
+    // X = [acceleration, velocity, altitude]
+    MatrixXf Xprediction(3, 1);
+
+    
+
+    return Xprediction;
+}
+
 int main(){
     // Initialize the state vector
     // setStateVector(Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt);
