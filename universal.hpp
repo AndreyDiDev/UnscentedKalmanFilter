@@ -131,6 +131,13 @@ class Universal{
 
     protected:
 
+        MatrixXf sigmaPoints;
+        MatrixXf Xprediction;
+        MatrixXf Pprediction;
+        MatrixXf P;
+        MatrixXf Q;
+        MatrixXf projectError;
+
 };
 
 bool getIsBeforeApogee(){

@@ -5,7 +5,7 @@
 #ifndef UNIVERSAL_CPP
 #define UNIVERSAL_CPP
 
-// Integration of Everest with UKF
+// Integration of Everest with  UKF
 
 #define REFRESH_RATE 20
 
@@ -117,10 +117,11 @@ void Universal::prediction(){
 
 }
 
-MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0) {
+MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf &projectError, MatrixXf &Weights) {
     // MatrixXf sigmaPoints(2,2);
     // Calculate the square root of (N+k) * P0 using Cholesky decomposition
     float lambda = std::pow(alpha, 2) * (N + k) - N;
+    std::cout << "lambda = " << lambda << std::endl;
 
     // MatrixXf sqrtP0 = (N + k) * P0;
     // MatrixXf sqrtP0(2,2);
@@ -131,18 +132,17 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0) {
     P << 5, 0, 
         0, 5;
     MatrixXf L( ((dim + k) *P).llt().matrixL());
-    std::cout << L.col(1) << std::endl;
+    std::cout << L << std::endl;
 
 
     std::cout << "calc sPts" << std::endl;
     // std::cout << "SqrtP0: " << sqrtP0 << std::endl;
-    std::cout << "l = " << lambda << std::endl;
 
     // LDLT<MatrixXf> lltOfP0(P0); // Perform Cholesky decomposition
     // MatrixXf L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
 
     // // Initialize sigma points matrix
-    MatrixXf sigmaPoints(dim, 2 * N + 1);
+    MatrixXf sigmaPoints(dim, (2 * N) + 1);
     sigmaPoints.setZero();
 
     // // Set the first sigma point
@@ -153,6 +153,28 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0) {
         sigmaPoints.row(i + 1) = X0 + L.col(i);
         sigmaPoints.row(i + 1 + N) = X0 - L.col(i);
     }
+
+    for(int j = dim + 1; j < (2 * N) + 1; j++){
+        sigmaPoints.col(j) = X0 + L.col(j - dim - 1);
+    }
+
+    // propagate sigma points through the dynamic model
+    for(int i = 0; i < (2 * N) + 1; i++){
+        sigmaPoints.col(i) = dynamicModel(sigmaPoints.col(i));
+    }
+
+    // calculate the mean and covariance of the sigma points
+    MatrixXf Xprediction;
+    Xprediction = sigmaPoints * Weights;
+
+    // MatrixXf projectError;
+    projectError.setZero(dim, (2 * N) + 1);
+    for(int j = 0; j < dim; j++){
+        projectError.row(j) = (sigmaPoints.row(j).array() - Xprediction.row(j).value()).matrix();
+    }
+
+    // assuming non linear dynamics
+    MatrixXf Pprediction = projectError * Weights.asDiagonal() * projectError.transpose() + Q;
 
     return sigmaPoints;
 }
