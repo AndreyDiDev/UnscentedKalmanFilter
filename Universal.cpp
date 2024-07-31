@@ -27,34 +27,34 @@ using namespace Eigen;
 void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
+    this->X0 = X0;
+    this->P = P0;
+    this->Z = Z_in;
 
     // F is for state to next state transition
-
     // P0 = initial guess of state covariance matrix
-
     // Q = process noise covariance matrix
-
     // R = measurement noise covariance matrix
 
     // Weights for sigma points
-    // float lambda = std::pow(alpha, 2) * (dim + k) - dim;
-    // float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
-    // float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
+    float lambda = std::pow(alpha, 2) * (dim + k) - dim;
+    float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
+    float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
 
-    // MatrixXf Weights(2 * dim + 1);
-    // Weights.setZero((2 * 3) + 1);   // 2N + 1
-    // Weights.setConstant(2 * dim + 1, w0_c);
-    // Weights(0) = w0_m;
+    MatrixXf Weights(2 * dim + 1);
+    Weights.setZero((2 * 3) + 1);   // 2N + 1
+    Weights.setConstant(2 * dim + 1, w0_c);
+    Weights(0) = w0_m;
 
-    // std::cout << "Weights: " << Weights << std::endl;
+    std::cout << "Weights: " << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
     // X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
 
-    // // Z_in = [GPS altitude]
+    // Z_in = [GPS altitude]
     // Z_in << this->getGPSAlt();
 
-    unscentedTransform();
+    // unscentedTransform();
 }
 
 // Update Step-------------------------------------
@@ -68,7 +68,7 @@ void Universal::unscentedTransform(){
     // measurement vector
     // Z = h (X) = altitude
 
-    //  N = number of dimensions
+    // N = number of dimensions
     // number of s points = 2N +1
     // all others = xn,n + sqrt((N+k)Pn,n) for 1 to N
     // change sign to negative when i = N+1, .... 2N
@@ -103,7 +103,9 @@ void Universal::stateUpdate(){
 void Universal::prediction(){
 
     // initialize scenario to default model-A(vg)
+
     // given the Madgwick acc, velo, alt
+
     // MatrixXf sigmaPoints(2*N+1, 3);
     // sigmaPoints.setZero(2*N+1, 3);
 
@@ -348,7 +350,7 @@ MatrixXf dynamicModel(MatrixXf &X){
     // X = [acceleration, velocity, altitude]
     MatrixXf Xprediction(3, 1);
 
-    
+
 
     return Xprediction;
 }

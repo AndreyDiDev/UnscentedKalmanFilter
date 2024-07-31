@@ -127,7 +127,7 @@ class Universal{
 
         std::vector<Scenario> scenarios;
 
-        std::vector<float> weights = {0.5, 0.5};
+        std::vector<float> scenarioWeights = {0.5, 0.5};
 
     protected:
 
@@ -137,6 +137,15 @@ class Universal{
         MatrixXf P;
         MatrixXf Q;
         MatrixXf projectError;
+        MatrixXf X0;
+
+        MatrixXf F; // state to next state transition matrix
+        MatrixXf H; // state to measurement matrix
+        MatrixXf R; // measurement noise covariance matrix
+        MatrixXf K; // Kalman gain matrix
+
+        MatrixXf X; // state vector
+
 
 };
 
