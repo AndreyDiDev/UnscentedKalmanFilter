@@ -342,10 +342,10 @@ void Universal::setStateVector(float filteredAcc, float filteredVelo, float filt
     this->Uvelo = filteredVelo;
     this->Ualt = filteredAlt;
 
-    VectorXf X_in(3);
+    // VectorXf X_in(3);
 
     /** X_in = [acceleration, velocity, altitude] */
-    X_in << this->Uaccel, this->Uvelo, this->Ualt;
+    this->X << this->Uaccel, this->Uvelo, this->Ualt;
 }
 
 // prediction step based on the dynamic model
