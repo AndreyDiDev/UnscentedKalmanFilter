@@ -37,18 +37,33 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     // // R = measurement noise covariance matrix
 
     // // Weights for sigma points
-    // float lambda = std::pow(alpha, 2) * (dim + k) - dim;
-    // float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
-    // float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
+    float lambda = std::pow(alpha, 2) * (dim + k) - dim;
+    lambda = -1.98;
+    float w0_m = lambda / (2 + lambda);    // weight for first sPoint when cal covar                                     // weight for first sPoint when cal mean
+    float w0_c = lambda/(2 + lambda) + (1 - std::pow(alpha, 2) + beta);
+    float w_i = 1/ (2 * ( N + lambda));
 
-    // MatrixXf Weights(2 * dim + 1);
+    std::cout << "lambda: " << lambda << std::endl; 
+    
+    std::cout << "w0_m: " << w0_m << " w0_c " << w0_c << std::endl;
+    
+    std::cout << "w_i: " << w_i << std::endl;
+
+    MatrixXf Weights(5, 5);
+    VectorXf W(5, 1);
     // Weights.setZero((2 * 3) + 1);   // 2N + 1
-    // Weights.setConstant(2 * dim + 1, w0_c);
-    // Weights(0) = w0_m;
+    W.setConstant(2 * dim + 1, w_i);
+    // Weights << w0_m, W;
+    // Weights.diagonal(w_i);
+    for(int i = 1; i < 5; i++){
+        Weights.diagonal()[i] = w_i;
+    }
 
-    // this->WeightsUKF = Weights;
+    Weights(0) = w0_c;
 
-    // std::cout << "Weights: " << Weights << std::endl;
+    this->WeightsUKF = Weights;
+
+    std::cout << "Weights: \n" << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
     // X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
@@ -165,9 +180,7 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
     }
 
     // propagate sigma points through the dynamic model
-    for(int i = 0; i < (2 * N) + 1; i++){
-        // sigmaPoints.col(i) = dynamicModel(sigmaPoints.col(i));
-    }
+    sigmaPoints << newDynamic(sigmaPoints);
 
     // calculate the mean and covariance of the sigma points
     // MatrixXf Xprediction;
@@ -183,6 +196,18 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
     // MatrixXf Pprediction = projectError * Weights.asDiagonal() * projectError.transpose() + Q;
 
     return sigmaPoints;
+}
+
+MatrixXf newDynamic(MatrixXf sigmaPoints){
+
+    // MatrixXf X10(5, 2);
+    for(int i = 0; i < (2 * dim) + 1; i++){
+        for(int j = 0; j < 2; j++){
+            X10.(i)[j] = sigmaPoints(i)[j] + Ang_Velo(i)[j];
+        }
+    }
+    return X10;
+
 }
 
 // Function to interpolate between two nearest scenarios
@@ -383,12 +408,16 @@ int main(){
     X0 << 0.0873,
           0;
 
+    MatrixXf X(10, 1);
+    X << 0.199, 0.113, 0.12, 0.101, 
+    0.099, 0.063, 0.008, -0.017, -0.037, -0.05;
+
     MatrixXf P0(2, 2);
     P0 << 5, 0,
           0, 5;
 
-    // VectorXf Z_in;
-    // Z_in << 0;
+    VectorXf Z_in(2,1);
+    Z_in << 0, 0;
 
     std::cout << "X0:\n" << X0 << std::endl;
 
@@ -397,7 +426,7 @@ int main(){
     std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
 
     Universal uni = Universal();
-    // uni.init(X0, P0, X0);
+    uni.init(X0, P0, Z_in);
 
 
     return 0;
