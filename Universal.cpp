@@ -27,28 +27,28 @@ using namespace Eigen;
 void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
-    this->X0 = X0;
-    this->P = P0;
-    this->Z = Z_in;
+    // this->X0 = X0;
+    // this->P = P0;
+    // this->Z = Z_in;
 
-    // F is for state to next state transition
-    // P0 = initial guess of state covariance matrix
-    // Q = process noise covariance matrix
-    // R = measurement noise covariance matrix
+    // // F is for state to next state transition
+    // // P0 = initial guess of state covariance matrix
+    // // Q = process noise covariance matrix
+    // // R = measurement noise covariance matrix
 
-    // Weights for sigma points
-    float lambda = std::pow(alpha, 2) * (dim + k) - dim;
-    float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
-    float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
+    // // Weights for sigma points
+    // float lambda = std::pow(alpha, 2) * (dim + k) - dim;
+    // float w0_m = lambda / (dim + k);                                         // weight for first sPoint when cal mean
+    // float w0_c = lambda/(3 + lambda) + (1 - std::pow(alpha, 2) + beta);    // weight for first sPoint when cal covar
 
-    MatrixXf Weights(2 * dim + 1);
-    Weights.setZero((2 * 3) + 1);   // 2N + 1
-    Weights.setConstant(2 * dim + 1, w0_c);
-    Weights(0) = w0_m;
+    // MatrixXf Weights(2 * dim + 1);
+    // Weights.setZero((2 * 3) + 1);   // 2N + 1
+    // Weights.setConstant(2 * dim + 1, w0_c);
+    // Weights(0) = w0_m;
 
-    this->WeightsUKF = Weights;
+    // this->WeightsUKF = Weights;
 
-    std::cout << "Weights: " << Weights << std::endl;
+    // std::cout << "Weights: " << Weights << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
     // X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
@@ -136,7 +136,9 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
     P << 5, 0, 
         0, 5;
 
-    MatrixXf L( ((dim + k) *P).llt().matrixL());
+    float mutliplier = 0.02; // N - lambda
+
+    MatrixXf L( ((mutliplier) *P).llt().matrixL());
     std::cout << L.col(0) << std::endl;
 
 
@@ -155,12 +157,11 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
 
     // Set the remaining sigma points
     for (int i = 1; i < dim + 1; i++) {
-        sigmaPoints.row(i + 1) = X0 + L.col(i);
-        sigmaPoints.row(i + 1 + N) = X0 - L.col(i);
+        sigmaPoints.col(i) = X0 + L.col(i - 1);
     }
 
     for(int j = dim + 1; j < (2 * N) + 1; j++){
-        sigmaPoints.col(j) = X0 + L.col(j - dim - 1);
+        sigmaPoints.col(j) = X0 - L.col(j - dim - 1);
     }
 
     // propagate sigma points through the dynamic model
@@ -169,17 +170,17 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
     }
 
     // calculate the mean and covariance of the sigma points
-    MatrixXf Xprediction;
-    Xprediction = sigmaPoints * Weights;
+    // MatrixXf Xprediction;
+    // Xprediction = sigmaPoints * Weights;
 
-    // MatrixXf projectError;
-    projectError.setZero(dim, (2 * N) + 1);
-    for(int j = 0; j < dim; j++){
-        projectError.row(j) = (sigmaPoints.row(j).array() - Xprediction.row(j).value()).matrix();
-    }
+    // // MatrixXf projectError;
+    // projectError.setZero(dim, (2 * N) + 1);
+    // for(int j = 0; j < dim; j++){
+    //     projectError.row(j) = (sigmaPoints.row(j).array() - Xprediction.row(j).value()).matrix();
+    // }
 
-    // assuming non linear dynamics
-    MatrixXf Pprediction = projectError * Weights.asDiagonal() * projectError.transpose() + Q;
+    // // assuming non linear dynamics
+    // MatrixXf Pprediction = projectError * Weights.asDiagonal() * projectError.transpose() + Q;
 
     return sigmaPoints;
 }
@@ -386,8 +387,8 @@ int main(){
     P0 << 5, 0,
           0, 5;
 
-    VectorXf Z_in;
-    Z_in << 0;
+    // VectorXf Z_in;
+    // Z_in << 0;
 
     std::cout << "X0:\n" << X0 << std::endl;
 
@@ -396,7 +397,7 @@ int main(){
     std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
 
     Universal uni = Universal();
-    uni.init(X0, P0, Z_in);
+    // uni.init(X0, P0, X0);
 
 
     return 0;
