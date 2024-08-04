@@ -136,6 +136,16 @@ void Universal::prediction(){
 
 }
 
+MatrixXf newDynamic(MatrixXf sigmaPoints){
+    float time = 0.05;
+
+    for(int i = 0; i < (2 * dim) + 1; i++){
+        sigmaPoints.col(i) << sigmaPoints.col(i)[0] + sigmaPoints.col(i)[1] * time, sigmaPoints.col(i)[1] - ((9.8/0.5)*(sigmaPoints.col(i)[0] * time));
+    }
+    return sigmaPoints;
+
+}
+
 MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf &projectError, MatrixXf &Weights) {
     // MatrixXf sigmaPoints(2,2);
     // Calculate the square root of (N+k) * P0 using Cholesky decomposition
@@ -180,7 +190,7 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
     }
 
     // propagate sigma points through the dynamic model
-    sigmaPoints << newDynamic(sigmaPoints);
+    sigmaPoints = newDynamic(sigmaPoints);
 
     // calculate the mean and covariance of the sigma points
     // MatrixXf Xprediction;
@@ -196,18 +206,6 @@ MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf 
     // MatrixXf Pprediction = projectError * Weights.asDiagonal() * projectError.transpose() + Q;
 
     return sigmaPoints;
-}
-
-MatrixXf newDynamic(MatrixXf sigmaPoints){
-
-    // MatrixXf X10(5, 2);
-    for(int i = 0; i < (2 * dim) + 1; i++){
-        for(int j = 0; j < 2; j++){
-            X10.(i)[j] = sigmaPoints(i)[j] + Ang_Velo(i)[j];
-        }
-    }
-    return X10;
-
 }
 
 // Function to interpolate between two nearest scenarios
