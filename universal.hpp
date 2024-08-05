@@ -1,8 +1,8 @@
 #ifndef UNIVERSAL_HPP
 #define UNIVERSAL_HPP
 
-#include "C:\\Users\\Andrey\\Downloads\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Cholesky"
-#include "C:\\Users\\Andrey\\Downloads\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Dense"
+#include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\eigen-3.4.0\\Eigen\\Cholesky"
+#include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\eigen-3.4.0\\Eigen\\Dense"
 #include <cmath>
 #include <string>
 #include <vector>
@@ -151,6 +151,7 @@ class Universal{
         MatrixXf projectError;
         MatrixXf X0;
         MatrixXf WeightsUKF;
+        VectorXf WeightsForSigmaPoints;
 
         MatrixXf F; // state to next state transition matrix
         MatrixXf H; // state to measurement matrix

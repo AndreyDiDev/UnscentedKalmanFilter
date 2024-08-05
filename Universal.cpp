@@ -1,5 +1,5 @@
 #include "universal.hpp"
-#include "C:\\Users\\Andrey\\Downloads\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Dense"
+#include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\eigen-3.4.0\\Eigen\\Dense"
 // #include "everestTaskHPP.hpp"
 
 #ifndef UNIVERSAL_CPP
@@ -64,6 +64,15 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     this->WeightsUKF = Weights;
 
     std::cout << "Weights: \n" << Weights << std::endl;
+
+    // errors can be because you didnt instatiate the matrix
+    // or trying to make a vector and declaring as a matrix
+    VectorXf WeightsForSigmaPoints(5, 1);
+    WeightsForSigmaPoints.setConstant(5, w_i);
+    WeightsForSigmaPoints(0) = w0_m;
+    this->WeightsForSigmaPoints = WeightsForSigmaPoints;
+
+    std::cout << "WeightsForSigmaPoints: \n" << WeightsForSigmaPoints << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
     // X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
@@ -198,16 +207,24 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q
     // propagate sigma points through the dynamic model
     sigmaPoints = newDynamic(sigmaPoints);
 
+    std::cout << "Sigma Points row \n" << sigmaPoints.rows() << std::endl;
+    std::cout << "Sigma Points row 0 \n" << sigmaPoints.row(0) << std::endl;
+    std::cout << "Sigma Points row 0\n" << sigmaPoints(0, all) << std::endl;
+
     // calculate the mean and covariance of the sigma points
-    // MatrixXf xPreMean(2,1);
-    // xPreMean = sigmaPoints * Weights;
+    VectorXf xPreMean(2,1);
+    // Xprediction = sigmaPoints * WeightsForSigmaPoints;
     float sum00 = 0;
-    for(int l = 0; l < 4; l++){
-        sum00 += sigmaPoints(0, l) * Weights(l);
+    for(int l = 0; l < N-1; l++){
+        for(int col = 0; col < 4; col++){
+            sum00 += sigmaPoints(l, col) * WeightsForSigmaPoints(col);
+        }
+        xPreMean(l) = sum00;
     }
     // this->Xprediction(0, 0) = sum00;
 
-    std::cout << "Sum00: " << sum00 << std::endl;
+    // std::cout << "Sum00: " << sum00 << std::endl;
+    std::cout << "XpreMean: \n" << xPreMean(0) << std::endl;
     // std::cout << "Xprediction: \n" << Xprediction << std::endl;
 
     // MatrixXf projError;
