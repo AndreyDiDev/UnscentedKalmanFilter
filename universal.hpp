@@ -125,6 +125,8 @@ class Universal{
         std::vector<std::pair<float, Scenario>> findNearestScenarios(const std::vector<Scenario>& scenarios, float time, float targetValue, char measure);
 
         float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios);
+
+        MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf &projectError, MatrixXf &Weights);
     private:
         float Uaccel;
         float Ualt;
