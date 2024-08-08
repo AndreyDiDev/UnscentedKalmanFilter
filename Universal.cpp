@@ -161,7 +161,7 @@ MatrixXf newDynamic(MatrixXf sigmaPoints){
 
 }
 
-MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf &projectError, MatrixXf &Weights) {
+MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B, MatrixXf &projectError, MatrixXf &Weights) {
     // MatrixXf sigmaPoints(2,2);
     // Calculate the square root of (N+k) * P0 using Cholesky decomposition
     float lambda = std::pow(alpha, 2) * (N + k) - N;
@@ -171,6 +171,9 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q
     // MatrixXf sqrtP0(2,2);
     // sqrtP0 << 0, 0,
     //         0, 0;
+    this->Q = B;
+
+    std::cout << "Q: " << Q << std::endl;
 
     MatrixXf P(2,2);
     P << 5, 0, 
@@ -234,15 +237,25 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q
     MatrixXf projError(2, 5);
     
     std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
+    std::cout << "xPreMean row: " << xPreMean.rows() << " col: " << xPreMean.cols() << std::endl;
+    std::cout << "sigmaPoints (0,3) " << projError(0,3) << std::endl;
 
-    for(int j = 0; j < dim; j++){
-        projectError.row(j) = (sigmaPoints.row(j).array() - Xprediction.row(j).value()).matrix();
+    for(int row = 0; row < N; row++){
+        for(int col = 0; col < 5; col++){
+            std::cout << "sigmaP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
+            std::cout << "xPreMean (" << row << ", " << col << ")" << "= " << xPreMean(row) << std::endl;
+            projError(row, col) = float(sigmaPoints(row, col)) - float(xPreMean(row));
+            std::cout << "projError (" << row << ", " << col << ")" << "= " << projError(row, col) << std::endl;
+        }
     }
 
-    std::cout << "Project Error: \n" << projectError << std::endl;
+    std::cout << "Project Error: \n" << projError << std::endl;
 
     // assuming non linear dynamics
-    MatrixXf Pprediction = projectError * Weights.asDiagonal() * projectError.transpose() + Q;
+    MatrixXf Pprediction(2,2);
+    // Pprediction = projectError * WeightsForSigmaPoints.asDiagonal() * projectError.transpose() + Q;
+
+    std::cout << "Pprediction: \n" << Pprediction << std::endl;
 
     return sigmaPoints;
 }
@@ -456,13 +469,17 @@ int main(){
     VectorXf Z_in(2,1);
     Z_in << 0, 0;
 
+    MatrixXf B(2,2);
+    B << 0.0000015625, 0.0000625,
+        0.0000625, 0.0025;
+
     std::cout << "X0:\n" << X0 << std::endl;
 
     Universal uni = Universal();
 
     uni.init(X0, P0, Z_in);
 
-    MatrixXf sigmaPoints = uni.calculateSigmaPoints(X0, P0, P0, P0, P0);
+    MatrixXf sigmaPoints = uni.calculateSigmaPoints(X0, P0, B, P0, P0);
 
     std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
 
