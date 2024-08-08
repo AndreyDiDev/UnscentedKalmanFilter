@@ -243,9 +243,9 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
     for(int row = 0; row < N; row++){
         for(int col = 0; col < 5; col++){
             std::cout << "sigmaP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
-            std::cout << "xPreMean (" << row << ", " << col << ")" << "= " << xPreMean(row) << std::endl;
+            std::cout << " - xPreMean (" << row << ", " << col << ")" << "= " << xPreMean(row) << std::endl;
             projError(row, col) = float(sigmaPoints(row, col)) - float(xPreMean(row));
-            std::cout << "projError (" << row << ", " << col << ")" << "= " << projError(row, col) << std::endl;
+            std::cout << " = projError (" << row << ", " << col << ")" << "= " << projError(row, col) << std::endl;
         }
     }
 
@@ -253,6 +253,15 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
 
     // assuming non linear dynamics
     MatrixXf Pprediction(2,2);
+    Weights.asDiagonal();
+    std::cout << "WeightsForSigmaPoints as diagonal: \n" << WeightsForSigmaPoints << std::endl;
+
+    // 2x5 * 1x5 * 5x2 = 2x2
+    // for(int row = 0; row < N; row++){
+    //     for(int col = 0; col < 5; col++){
+    //         Pprediction(row, col) = float(projError(row, col)) * float(WeightsForSigmaPoints(col)) * float(projError(row, col));
+    //     }
+    // }
     // Pprediction = projectError * WeightsForSigmaPoints.asDiagonal() * projectError.transpose() + Q;
 
     std::cout << "Pprediction: \n" << Pprediction << std::endl;
