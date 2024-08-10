@@ -262,7 +262,7 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
     //         Pprediction(row, col) = float(projError(row, col)) * float(WeightsForSigmaPoints(col)) * float(projError(row, col));
     //     }
     // }
-    // Pprediction = projectError * WeightsForSigmaPoints.asDiagonal() * projectError.transpose() + Q;
+    Pprediction = projError * WeightsForSigmaPoints.asDiagonal() * projError.transpose() + Q;
 
     std::cout << "Pprediction: \n" << Pprediction << std::endl;
 
