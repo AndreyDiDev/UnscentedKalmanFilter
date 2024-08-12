@@ -96,7 +96,7 @@ class Universal{
 
         void unscentedTransform();
 
-        void stateUpdate();
+        void stateUpdate(MatrixXf sigPoints);
 
         void prediction();
 

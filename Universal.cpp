@@ -87,7 +87,7 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
 void Universal::update(){
     unscentedTransform();
 
-    stateUpdate();
+    // stateUpdate();
 }
 
 void Universal::unscentedTransform(){
@@ -116,10 +116,20 @@ void Universal::unscentedTransform(){
     // covar P n+1, n = sum to 2N for wi (Xn+1,n - xhatn+1,n)(same transposed)
 
     // for gaussian distribution, set N + k = 3
+
 }
 
-void Universal::stateUpdate(){
+void Universal::stateUpdate(MatrixXf sigPoints){
     // Xn = Xn-1 + K (Zn - EstZn)
+    std::cout << "sigmaPoints state update: " << sigPoints << std::endl;
+
+    VectorXf Z_1(5);
+    Z_1.setZero();
+
+    for(int col = 0; col < 2*N + 1; col++){
+        Z_1(col) =  sinf(sigPoints(0, col)) * 0.5;
+    }
+    std::cout << "Z: " << Z_1 << std::endl;
 }
 // ------------------------------------------------
 
@@ -491,6 +501,8 @@ int main(){
     MatrixXf sigmaPoints = uni.calculateSigmaPoints(X0, P0, B, P0, P0);
 
     std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
+
+    uni.stateUpdate(sigmaPoints);
 
     return 0;
 
