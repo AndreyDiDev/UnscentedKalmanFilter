@@ -172,13 +172,21 @@ void Universal::stateUpdate(MatrixXf sigPoints){
 
     for(int i = 0; i < 5; i++){
         Pxz(0) += projectError(0, i) * WeightsForSigmaPoints(i) * zCovar(i);
-    }
-
-    for(int i = 0; i < 5; i++){
         Pxz(1) += projectError(1, i) * WeightsForSigmaPoints(i) * zCovar(i);
     }
 
     std::cout << "Pxz: " << Pxz << std::endl;
+
+    // calculate the Kalman gain
+    VectorXf K(2);
+    K.setZero();
+
+    K = Pxz * Pz.asDiagonal().inverse();
+
+    std::cout << "Kalman Gain: " << K << std::endl;
+
+    // update the state vector
+    // X = X + K * (Z - zMean);
 }
 // ------------------------------------------------
 
