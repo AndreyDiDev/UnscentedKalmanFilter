@@ -31,12 +31,12 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
     // this->P = P0;
     // this->Z = Z_in;
 
-    // // F is for state to next state transition
-    // // P0 = initial guess of state covariance matrix
-    // // Q = process noise covariance matrix
-    // // R = measurement noise covariance matrix
+    // F is for state to next state transition
+    // P0 = initial guess of state covariance matrix
+    // Q = process noise covariance matrix -> dynamic model std
+    // R = measurement noise covariance matrix -> sensor std
 
-    // // Weights for sigma points
+    // Weights for sigma points
     float lambda = std::pow(alpha, 2) * (dim + k) - dim;
     lambda = -1.98;
     float w0_m = lambda / (2 + lambda);    // weight for first sPoint when cal covar                                     // weight for first sPoint when cal mean
@@ -51,10 +51,9 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
 
     MatrixXf Weights(5, 5);
     VectorXf W(5, 1);
-    // Weights.setZero((2 * 3) + 1);   // 2N + 1
+
     W.setConstant(2 * dim + 1, w_i);
-    // Weights << w0_m, W;
-    // Weights.diagonal(w_i);
+
     for(int i = 1; i < 5; i++){
         Weights.diagonal()[i] = w_i;
     }
@@ -130,6 +129,56 @@ void Universal::stateUpdate(MatrixXf sigPoints){
         Z_1(col) =  sinf(sigPoints(0, col)) * 0.5;
     }
     std::cout << "Z: " << Z_1 << std::endl;
+
+    VectorXf R(1);
+    R(0) = std::pow(0.1, 2);
+
+    VectorXf zMean(1);
+    zMean.setZero();
+
+    // calculate mean of Z with weights
+    for(int i = 0; i < 5; i++){
+        zMean(0) += Z_1(i) * WeightsForSigmaPoints(i);
+    }
+
+    std::cout << "Z Mean: " << zMean << std::endl;
+    std::cout << "WeightsForSigmaPoints: " << WeightsForSigmaPoints << std::endl;
+
+    // calculate covariance of Z
+    VectorXf zCovar(5);
+    zCovar.setZero();
+
+    for(int i = 0; i < 5; i++){
+        zCovar(i) += (Z_1(i) - zMean(0));
+    }
+
+    std::cout << "Z Covar: " << zCovar << std::endl;
+
+    // calculate the innovation covariance
+    VectorXf Pz(1);
+
+    for(int i = 0; i < 5; i++){
+        Pz(0) += zCovar(i) * WeightsForSigmaPoints(i) * zCovar(i) + R(0);
+    }
+    // Pz = zCovar * WeightsForSigmaPoints.asDiagonal() * zCovar.transpose() + R;
+
+    std::cout << "Pz: " << Pz << std::endl;
+
+    // calculate the cross covariance
+    VectorXf Pxz(2);
+    Pxz.setZero();
+
+    std::cout << "projectError: " << projectError << std::endl;
+
+    for(int i = 0; i < 5; i++){
+        Pxz(0) += projectError(0, i) * WeightsForSigmaPoints(i) * zCovar(i);
+    }
+
+    for(int i = 0; i < 5; i++){
+        Pxz(1) += projectError(1, i) * WeightsForSigmaPoints(i) * zCovar(i);
+    }
+
+    std::cout << "Pxz: " << Pxz << std::endl;
 }
 // ------------------------------------------------
 
@@ -177,10 +226,6 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
     float lambda = std::pow(alpha, 2) * (N + k) - N;
     std::cout << "lambda = " << lambda << std::endl;
 
-    // MatrixXf sqrtP0 = (N + k) * P0;
-    // MatrixXf sqrtP0(2,2);
-    // sqrtP0 << 0, 0,
-    //         0, 0;
     this->Q = B;
 
     std::cout << "Q: " << Q << std::endl;
@@ -194,18 +239,11 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
     MatrixXf L( ((mutliplier) *P).llt().matrixL());
     std::cout << L.col(0) << std::endl;
 
-
-    std::cout << "calc sPts" << std::endl;
-    // std::cout << "SqrtP0: " << sqrtP0 << std::endl;
-
-    // LDLT<MatrixXf> lltOfP0(P0); // Perform Cholesky decomposition
-    // MatrixXf L = lltOfP0.matrixL(); // Retrieve the lower triangular matrix
-
-    // // Initialize sigma points matrix
+    // Initialize sigma points matrix
     MatrixXf sigmaPoints(dim, (2 * N) + 1);
     sigmaPoints.setZero();
 
-    // // Set the first sigma point
+    // Set the first sigma point
     sigmaPoints.col(0) = X0;
 
     // Set the remaining sigma points
@@ -229,7 +267,6 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
 
     // calculate the mean and covariance of the sigma points
     VectorXf xPreMean(2,1);
-    // Xprediction = sigmaPoints * WeightsForSigmaPoints;
     for(int row = 0; row < N; row++){
         float sum00 = 0;
         for(int col = 0; col < 5; col++){
@@ -239,7 +276,6 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
         xPreMean(row) = sum00;
         std::cout << "XpreMean: \n" << xPreMean << std::endl;
     }
-    // this->Xprediction(0, 0) = sum00;
 
     std::cout << "XpreMean: \n" << xPreMean << std::endl;
     // std::cout << "Xprediction: \n" << Xprediction << std::endl;
@@ -250,6 +286,7 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
     std::cout << "xPreMean row: " << xPreMean.rows() << " col: " << xPreMean.cols() << std::endl;
     std::cout << "sigmaPoints (0,3) " << projError(0,3) << std::endl;
 
+    // TO DO remove float cast
     for(int row = 0; row < N; row++){
         for(int col = 0; col < 5; col++){
             std::cout << "sigmaP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
@@ -261,17 +298,13 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
 
     std::cout << "Project Error: \n" << projError << std::endl;
 
+    this->projectError = projError;
+
     // assuming non linear dynamics
     MatrixXf Pprediction(2,2);
     WeightsForSigmaPoints.asDiagonal();
     std::cout << "WeightsForSigmaPoints as diagonal: \n" << WeightsForSigmaPoints << std::endl;
 
-    // 2x5 * 1x5 * 5x2 + 2x2 = 2x2
-    // for(int row = 0; row < N; row++){
-    //     for(int col = 0; col < 5; col++){
-    //         Pprediction(row, col) = float(projError(row, col)) * float(WeightsForSigmaPoints(col)) * float(projError(row, col));
-    //     }
-    // }
     Pprediction = projError * WeightsForSigmaPoints.asDiagonal() * projError.transpose() + Q;
 
     std::cout << "Pprediction: \n" << Pprediction << std::endl;
