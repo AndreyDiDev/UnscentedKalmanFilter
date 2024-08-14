@@ -127,6 +127,8 @@ class Universal{
         float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios);
 
         MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf &projectError, MatrixXf &Weights);
+
+        VectorXf X; // state vector
     private:
         float Uaccel;
         float Ualt;
@@ -140,6 +142,8 @@ class Universal{
         std::vector<Scenario> scenarios;
 
         std::vector<float> scenarioWeights = {0.5, 0.5};
+
+        
 
     protected:
 
@@ -158,8 +162,8 @@ class Universal{
         MatrixXf R; // measurement noise covariance matrix
         MatrixXf K; // Kalman gain matrix
 
-        MatrixXf X; // state vector
-        MatrixXf Z;
+        
+        VectorXf Z;
 
         kinematics Kinematics;
 

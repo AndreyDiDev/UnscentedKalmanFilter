@@ -128,7 +128,8 @@ void Universal::stateUpdate(MatrixXf sigPoints){
     for(int col = 0; col < 2*N + 1; col++){
         Z_1(col) =  sinf(sigPoints(0, col)) * 0.5;
     }
-    std::cout << "Z: " << Z_1 << std::endl;
+    std::cout << "Z_1: " << Z_1 << std::endl;
+    this->Z = Z_1;
 
     VectorXf R(1);
     R(0) = std::pow(0.1, 2);
@@ -160,7 +161,6 @@ void Universal::stateUpdate(MatrixXf sigPoints){
     for(int i = 0; i < 5; i++){
         Pz(0) += zCovar(i) * WeightsForSigmaPoints(i) * zCovar(i) + R(0);
     }
-    // Pz = zCovar * WeightsForSigmaPoints.asDiagonal() * zCovar.transpose() + R;
 
     std::cout << "Pz: " << Pz << std::endl;
 
@@ -185,8 +185,32 @@ void Universal::stateUpdate(MatrixXf sigPoints){
 
     std::cout << "Kalman Gain: " << K << std::endl;
 
-    // update the state vector
-    // X = X + K * (Z - zMean);
+    std::cout << "Z: " << Z << std::endl;
+    std::cout << "zMean: " << zMean << std::endl;
+    std::cout << "K: " << K << std::endl;
+
+    std::cout << "Z - zMean: " << zCovar << std::endl;
+
+    // 2x1 * 1x1 = 2x1
+    // std::cout << "K * Z: " << K * Z << std::endl;
+
+    std::cout << "Xprediction: " << Xprediction << std::endl;
+
+    VectorXf innovation(1);
+
+    std::cout << "X(0): " << X(0) << std::endl;
+
+    // 1x5 * 5x1 = 1x1
+    innovation(0) = sinf(X(0)) * 0.5  -  zMean(0);
+
+    // std::cout << "sinf(X(0)) * 0.5" << sinf(X(0)) * 0.5 << std::endl;
+
+    std::cout << "Innovation: " << innovation << std::endl;
+
+    // update the state vector 2x1 + 2x1 * 1x1 = 2x1
+    X0 = Xprediction + K * innovation; 
+
+    std::cout << "X0: " << X0 << std::endl;
 }
 // ------------------------------------------------
 
@@ -287,6 +311,7 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
 
     std::cout << "XpreMean: \n" << xPreMean << std::endl;
     // std::cout << "Xprediction: \n" << Xprediction << std::endl;
+    this->Xprediction = xPreMean;
 
     MatrixXf projError(2, 5);
     
@@ -518,7 +543,7 @@ int main(){
     X0 << 0.0873,
           0;
 
-    MatrixXf X(10, 1);
+    VectorXf X(10);
     X << 0.199, 0.113, 0.12, 0.101, 
     0.099, 0.063, 0.008, -0.017, -0.037, -0.05;
 
@@ -536,6 +561,8 @@ int main(){
     std::cout << "X0:\n" << X0 << std::endl;
 
     Universal uni = Universal();
+
+    uni.X = X;
 
     uni.init(X0, P0, Z_in);
 
