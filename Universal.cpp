@@ -214,7 +214,10 @@ void Universal::stateUpdate(MatrixXf sigPoints){
     std::cout << "X0: " << X0 << std::endl;
 
     // update the covariance matrix 2x2 = 2x2 - 2x1 * 1x1 * 1x2
-    P = Pprediction - K * Pz.asDiagonal() * K.transpose();
+    MatrixXf P1(2,2);
+    P1 = Pprediction - (K * Pz * K.transpose());
+
+    this->P = P1;
 
     std::cout << "P(1,1): " << P << std::endl;
 }
