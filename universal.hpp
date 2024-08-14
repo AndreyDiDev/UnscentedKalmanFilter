@@ -90,7 +90,7 @@ struct Scenario {
 
 class Universal{
     public:
-        void init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in);
+        void init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input);
 
         void update();
 
@@ -126,7 +126,7 @@ class Universal{
 
         float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios);
 
-        MatrixXf calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &Q, MatrixXf &projectError, MatrixXf &Weights);
+        MatrixXf calculateSigmaPoints();
 
         VectorXf X; // state vector
     private:

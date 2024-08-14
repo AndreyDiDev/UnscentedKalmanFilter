@@ -24,12 +24,13 @@ using namespace Eigen;
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void Universal::init(MatrixXf &X0, MatrixXf &P0, VectorXf &Z_in){
+void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
-    // this->X0 = X0;
-    // this->P = P0;
-    // this->Z = Z_in;
+    this->X0 = X0;
+    this->P = P0;
+    this->Z = Z_input;
+    this->Q = Q_input;
 
     // F is for state to next state transition
     // P0 = initial guess of state covariance matrix
@@ -201,16 +202,21 @@ void Universal::stateUpdate(MatrixXf sigPoints){
     std::cout << "X(0): " << X(0) << std::endl;
 
     // 1x5 * 5x1 = 1x1
-    innovation(0) = sinf(X(0)) * 0.5  -  zMean(0);
+    innovation(0) = X(0)  -  zMean(0);
 
     // std::cout << "sinf(X(0)) * 0.5" << sinf(X(0)) * 0.5 << std::endl;
 
     std::cout << "Innovation: " << innovation << std::endl;
 
-    // update the state vector 2x1 + 2x1 * 1x1 = 2x1
+    // update the state vector
     X0 = Xprediction + K * innovation; 
 
     std::cout << "X0: " << X0 << std::endl;
+
+    // update the covariance matrix 2x2 = 2x2 - 2x1 * 1x1 * 1x2
+    P = Pprediction - K * Pz.asDiagonal() * K.transpose();
+
+    std::cout << "P(1,1): " << P << std::endl;
 }
 // ------------------------------------------------
 
@@ -236,7 +242,6 @@ void Universal::prediction(){
 
 }
 
-// working
 MatrixXf newDynamic(MatrixXf sigmaPoints){
     float time = 0.05;
 
@@ -252,13 +257,9 @@ MatrixXf newDynamic(MatrixXf sigmaPoints){
 
 }
 
-MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B, MatrixXf &projectError, MatrixXf &Weights) {
-    // MatrixXf sigmaPoints(2,2);
-    // Calculate the square root of (N+k) * P0 using Cholesky decomposition
+MatrixXf Universal::calculateSigmaPoints() {
     float lambda = std::pow(alpha, 2) * (N + k) - N;
     std::cout << "lambda = " << lambda << std::endl;
-
-    this->Q = B;
 
     std::cout << "Q: " << Q << std::endl;
 
@@ -319,12 +320,11 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
     std::cout << "xPreMean row: " << xPreMean.rows() << " col: " << xPreMean.cols() << std::endl;
     std::cout << "sigmaPoints (0,3) " << projError(0,3) << std::endl;
 
-    // TO DO remove float cast
     for(int row = 0; row < N; row++){
         for(int col = 0; col < 5; col++){
             std::cout << "sigmaP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
             std::cout << " - xPreMean (" << row << ", " << col << ")" << "= " << xPreMean(row) << std::endl;
-            projError(row, col) = float(sigmaPoints(row, col)) - float(xPreMean(row));
+            projError(row, col) = sigmaPoints(row, col) - xPreMean(row);
             std::cout << " = projError (" << row << ", " << col << ")" << "= " << projError(row, col) << std::endl;
         }
     }
@@ -336,6 +336,7 @@ MatrixXf Universal::calculateSigmaPoints(MatrixXf &X0, MatrixXf &P0, MatrixXf &B
     // assuming non linear dynamics
     MatrixXf Pprediction(2,2);
     WeightsForSigmaPoints.asDiagonal();
+
     std::cout << "WeightsForSigmaPoints as diagonal: \n" << WeightsForSigmaPoints << std::endl;
 
     Pprediction = projError * WeightsForSigmaPoints.asDiagonal() * projError.transpose() + Q;
@@ -492,9 +493,6 @@ bool isBeforeApogee(float acceleration, float velocity, float altitude, float la
     return true;
 }
 
-// R = control noise
-// Q = measurement noise
-
 /**
  * @brief Take the filtered values from Everest filter
 */
@@ -522,7 +520,6 @@ MatrixXf dynamicModel(MatrixXf &X){
 int main(){
     // Initialize the state vector
     // setStateVector(Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt);
-    // setStateVector(0, 0, 1000);
 
     // // Initialize the covariance matrix
     // MatrixXf P0(3, 3);
@@ -539,6 +536,7 @@ int main(){
     // // Predict the next values
     // prediction();
 
+    // only able to measure angle and extrapolate for velocity
     MatrixXf X0(2, 1);
     X0 << 0.0873,
           0;
@@ -554,8 +552,8 @@ int main(){
     VectorXf Z_in(2,1);
     Z_in << 0, 0;
 
-    MatrixXf B(2,2);
-    B << 0.0000015625, 0.0000625,
+    MatrixXf Q(2,2);
+    Q << 0.0000015625, 0.0000625,
         0.0000625, 0.0025;
 
     std::cout << "X0:\n" << X0 << std::endl;
@@ -564,9 +562,10 @@ int main(){
 
     uni.X = X;
 
-    uni.init(X0, P0, Z_in);
+    // TO DO bring X into initialization
+    uni.init(X0, P0, Q, Z_in);
 
-    MatrixXf sigmaPoints = uni.calculateSigmaPoints(X0, P0, B, P0, P0);
+    MatrixXf sigmaPoints = uni.calculateSigmaPoints();
 
     std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
 
