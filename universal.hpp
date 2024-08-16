@@ -96,7 +96,7 @@ class Universal{
 
         void unscentedTransform();
 
-        void stateUpdate(MatrixXf sigPoints);
+        void stateUpdate();
 
         void prediction();
 
@@ -126,9 +126,11 @@ class Universal{
 
         float interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios);
 
-        MatrixXf calculateSigmaPoints();
+        void calculateSigmaPoints();
 
         VectorXf X; // state vector
+
+        VectorXf X0; // current state vector
     private:
         float Uaccel;
         float Ualt;
@@ -143,8 +145,6 @@ class Universal{
 
         std::vector<float> scenarioWeights = {0.5, 0.5};
 
-        
-
     protected:
 
         MatrixXf sigmaPoints;
@@ -153,7 +153,7 @@ class Universal{
         MatrixXf P;
         MatrixXf Q;
         MatrixXf projectError;
-        MatrixXf X0;
+        
         MatrixXf WeightsUKF;
         VectorXf WeightsForSigmaPoints;
 
@@ -162,13 +162,13 @@ class Universal{
         MatrixXf R; // measurement noise covariance matrix
         MatrixXf K; // Kalman gain matrix
 
-        
         VectorXf Z;
 
         kinematics Kinematics;
 
         kinematics* getKinematics();
 
+        MatrixXf sigPoints;
 
 };
 

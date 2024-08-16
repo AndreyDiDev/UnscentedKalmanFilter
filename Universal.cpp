@@ -20,7 +20,7 @@ using namespace Eigen;
 
 // Madgwick -> IMUs, Baros
 
-// UKF -> GPS, Dynamic Model
+// UKF -> GPS, Dynamic Model = augmented state vector
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
@@ -44,11 +44,11 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_i
     float w0_c = lambda/(2 + lambda) + (1 - std::pow(alpha, 2) + beta);
     float w_i = 1/ (2 * ( N + lambda));
 
-    std::cout << "lambda: " << lambda << std::endl; 
+    // std::cout << "lambda: " << lambda << std::endl; 
     
-    std::cout << "w0_m: " << w0_m << " w0_c " << w0_c << std::endl;
+    // std::cout << "w0_m: " << w0_m << " w0_c " << w0_c << std::endl;
     
-    std::cout << "w_i: " << w_i << std::endl;
+    // std::cout << "w_i: " << w_i << std::endl;
 
     MatrixXf Weights(5, 5);
     VectorXf W(5, 1);
@@ -63,7 +63,7 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_i
 
     this->WeightsUKF = Weights;
 
-    std::cout << "Weights: \n" << Weights << std::endl;
+    // std::cout << "Weights: \n" << Weights << std::endl;
 
     // errors can be because you didnt instatiate the matrix
     // or trying to make a vector and declaring as a matrix
@@ -72,7 +72,7 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_i
     WeightsForSigmaPoints(0) = w0_m;
     this->WeightsForSigmaPoints = WeightsForSigmaPoints;
 
-    std::cout << "WeightsForSigmaPoints: \n" << WeightsForSigmaPoints << std::endl;
+    // std::cout << "WeightsForSigmaPoints: \n" << WeightsForSigmaPoints << std::endl;
 
     // X0 = [acceleration, velocity, altitude]
     // X0 << this->getFAccel(), this->getFVelo(), this->getFAlt();
@@ -80,7 +80,7 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_i
     // Z_in = [GPS altitude]
     // Z_in << this->getGPSAlt();
 
-    // unscentedTransform();
+    calculateSigmaPoints();
 }
 
 // Update Step-------------------------------------
@@ -119,7 +119,7 @@ void Universal::unscentedTransform(){
 
 }
 
-void Universal::stateUpdate(MatrixXf sigPoints){
+void Universal::stateUpdate(){
     // Xn = Xn-1 + K (Zn - EstZn)
     std::cout << "sigmaPoints state update: " << sigPoints << std::endl;
 
@@ -186,23 +186,21 @@ void Universal::stateUpdate(MatrixXf sigPoints){
 
     std::cout << "Kalman Gain: " << K << std::endl;
 
-    std::cout << "Z: " << Z << std::endl;
-    std::cout << "zMean: " << zMean << std::endl;
-    std::cout << "K: " << K << std::endl;
+    // std::cout << "Z: " << Z << std::endl;
+    // std::cout << "zMean: " << zMean << std::endl;
+    // std::cout << "K: " << K << std::endl;
 
     std::cout << "Z - zMean: " << zCovar << std::endl;
 
-    // 2x1 * 1x1 = 2x1
     // std::cout << "K * Z: " << K * Z << std::endl;
 
     std::cout << "Xprediction: " << Xprediction << std::endl;
 
     VectorXf innovation(1);
 
-    std::cout << "X(0): " << X(0) << std::endl;
+    // std::cout << "X(0): " << X(0) << std::endl;
 
-    // 1x5 * 5x1 = 1x1
-    innovation(0) = X(0)  -  zMean(0);
+    innovation(0) = X0(0)  -  zMean(0);
 
     // std::cout << "sinf(X(0)) * 0.5" << sinf(X(0)) * 0.5 << std::endl;
 
@@ -211,15 +209,25 @@ void Universal::stateUpdate(MatrixXf sigPoints){
     // update the state vector
     X0 = Xprediction + K * innovation; 
 
-    std::cout << "X0: " << X0 << std::endl;
+    std::cout << "X(1,1): " << X0 << std::endl;
 
-    // update the covariance matrix 2x2 = 2x2 - 2x1 * 1x1 * 1x2
+    // update the covariance matrix
     MatrixXf P1(2,2);
+
+    // std::cout << "Pprediction: " << Pprediction << std::endl;
+    // std::cout << "K: " << K << std::endl;
+    // std::cout << "Pz: " << Pz << std::endl;
+
     P1 = Pprediction - (K * Pz * K.transpose());
 
     this->P = P1;
 
     std::cout << "P(1,1): " << P << std::endl;
+
+    std::cout << "\n end of state Update\n " << std::endl;
+
+    calculateSigmaPoints();
+
 }
 // ------------------------------------------------
 
@@ -254,21 +262,17 @@ MatrixXf newDynamic(MatrixXf sigmaPoints){
     }
 
     std::cout << "New Sigma Points: \n" << sigmaPoints << std::endl;
-    std::cout << "New Sigma Points: \n" << sigmaPoints(1,2) << std::endl;
+    // std::cout << "New Sigma Points: \n" << sigmaPoints(1,2) << std::endl;
 
     return sigmaPoints;
 
 }
 
-MatrixXf Universal::calculateSigmaPoints() {
+void Universal::calculateSigmaPoints() {
     float lambda = std::pow(alpha, 2) * (N + k) - N;
     std::cout << "lambda = " << lambda << std::endl;
 
     std::cout << "Q: " << Q << std::endl;
-
-    MatrixXf P(2,2);
-    P << 5, 0, 
-        0, 5;
 
     float mutliplier = 0.02; // N - lambda
 
@@ -306,11 +310,11 @@ MatrixXf Universal::calculateSigmaPoints() {
     for(int row = 0; row < N; row++){
         float sum00 = 0;
         for(int col = 0; col < 5; col++){
-            std::cout << "sP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
-            sum00 += float(sigmaPoints(row, col)) * float(WeightsForSigmaPoints(col));
+            // std::cout << "sP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
+            sum00 += sigmaPoints(row, col) * WeightsForSigmaPoints(col);
         }
         xPreMean(row) = sum00;
-        std::cout << "XpreMean: \n" << xPreMean << std::endl;
+        // std::cout << "XpreMean: \n" << xPreMean << std::endl;
     }
 
     std::cout << "XpreMean: \n" << xPreMean << std::endl;
@@ -319,16 +323,16 @@ MatrixXf Universal::calculateSigmaPoints() {
 
     MatrixXf projError(2, 5);
     
-    std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
-    std::cout << "xPreMean row: " << xPreMean.rows() << " col: " << xPreMean.cols() << std::endl;
-    std::cout << "sigmaPoints (0,3) " << projError(0,3) << std::endl;
+    // std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
+    // std::cout << "xPreMean row: " << xPreMean.rows() << " col: " << xPreMean.cols() << std::endl;
+    // std::cout << "sigmaPoints (0,3) " << projError(0,3) << std::endl;
 
     for(int row = 0; row < N; row++){
         for(int col = 0; col < 5; col++){
-            std::cout << "sigmaP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
-            std::cout << " - xPreMean (" << row << ", " << col << ")" << "= " << xPreMean(row) << std::endl;
+            // std::cout << "sigmaP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
+            // std::cout << " - xPreMean (" << row << ", " << col << ")" << "= " << xPreMean(row) << std::endl;
             projError(row, col) = sigmaPoints(row, col) - xPreMean(row);
-            std::cout << " = projError (" << row << ", " << col << ")" << "= " << projError(row, col) << std::endl;
+            // std::cout << " = projError (" << row << ", " << col << ")" << "= " << projError(row, col) << std::endl;
         }
     }
 
@@ -340,13 +344,15 @@ MatrixXf Universal::calculateSigmaPoints() {
     MatrixXf Pprediction(2,2);
     WeightsForSigmaPoints.asDiagonal();
 
-    std::cout << "WeightsForSigmaPoints as diagonal: \n" << WeightsForSigmaPoints << std::endl;
+    // std::cout << "WeightsForSigmaPoints as diagonal: \n" << WeightsForSigmaPoints << std::endl;
 
     Pprediction = projError * WeightsForSigmaPoints.asDiagonal() * projError.transpose() + Q;
 
     std::cout << "Pprediction: \n" << Pprediction << std::endl;
 
-    return sigmaPoints;
+    this->Pprediction = Pprediction;
+
+    this->sigPoints =  sigmaPoints;
 }
 
 // Function to interpolate between two nearest scenarios
@@ -548,8 +554,8 @@ int main(){
     X << 0.199, 0.113, 0.12, 0.101, 
     0.099, 0.063, 0.008, -0.017, -0.037, -0.05;
 
-    MatrixXf P0(2, 2);
-    P0 << 5, 0,
+    MatrixXf P(2, 2);
+    P << 5, 0,
           0, 5;
 
     VectorXf Z_in(2,1);
@@ -563,16 +569,14 @@ int main(){
 
     Universal uni = Universal();
 
-    uni.X = X;
+    uni.init(X0, P, Q, Z_in);
 
-    // TO DO bring X into initialization
-    uni.init(X0, P0, Q, Z_in);
-
-    MatrixXf sigmaPoints = uni.calculateSigmaPoints();
-
-    std::cout << "Sigma Points:\n" << sigmaPoints << std::endl;
-
-    uni.stateUpdate(sigmaPoints);
+    for(int i = 0; i < 10; i++){
+        std::cout << "\n\nIteration: " << i << std::endl;
+        uni.stateUpdate();
+        uni.X0(0) = X(i);
+    }
+   
 
     return 0;
 
