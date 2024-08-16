@@ -1,6 +1,7 @@
 #include "universal.hpp"
 #include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\eigen-3.4.0\\Eigen\\Dense"
 // #include "everestTaskHPP.hpp"
+#include <fstream>
 
 #ifndef UNIVERSAL_CPP
 #define UNIVERSAL_CPP
@@ -530,21 +531,6 @@ int main(){
     // Initialize the state vector
     // setStateVector(Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt);
 
-    // // Initialize the covariance matrix
-    // MatrixXf P0(3, 3);
-    // P0 << 3, 0, 0,
-    //       0, 3, 0,
-    //       0, 0, 3;
-
-    // // Initialize the UKF
-    // init(P0, Z_in, R_in);
-
-    // // Update the UKF
-    // update();
-
-    // // Predict the next values
-    // prediction();
-
     // only able to measure angle and extrapolate for velocity
     MatrixXf X0(2, 1);
     X0 << 0.0873,
@@ -565,7 +551,19 @@ int main(){
     Q << 0.0000015625, 0.0000625,
         0.0000625, 0.0025;
 
-    std::cout << "X0:\n" << X0 << std::endl;
+    // std::cout << "X0:\n" << X0 << std::endl;
+
+    // Open a file for writing
+    std::ofstream outFile("filtered_values.csv");
+
+    // Check if the file is open
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to open file for writing." << std::endl;
+        return 1;
+    }
+
+    // Write the header to the file
+    outFile << "Time,FilteredValue_angle,FilteredValue_velo\n";
 
     Universal uni = Universal();
 
@@ -574,8 +572,16 @@ int main(){
     for(int i = 0; i < 10; i++){
         std::cout << "\n\nIteration: " << i << std::endl;
         uni.stateUpdate();
+
+        // Write the filtered values to the file
+        outFile << i*0.05 << "," << uni.X0(0) << "," << uni.X0(1) << "\n";
+
+        // measure
         uni.X0(0) = X(i);
     }
+
+    // Close the file
+    outFile.close();
    
 
     return 0;
@@ -583,9 +589,3 @@ int main(){
 }
 
 #endif
-
-
-// have 10 sec zero offset procedure
-// then wait for sigificant movement to start UKF
-// then catch up to the logged but not submitted
-// to UKF meassurment for the start delay
