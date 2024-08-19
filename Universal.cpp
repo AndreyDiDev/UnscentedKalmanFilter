@@ -39,17 +39,21 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_i
     // R = measurement noise covariance matrix -> sensor std
 
     // Weights for sigma points
-    float lambda = std::pow(alpha, 2) * (dim + k) - dim;
-    lambda = -1.98;
+    float dimensions = 2;
+    float k1 = 2 - dimensions;
+    float lambda = std::pow(alpha, 2) * (dimensions + k1) - dimensions;
+    this->lambda = lambda;
+    this->N1 = dimensions;
+
     float w0_m = lambda / (2 + lambda);    // weight for first sPoint when cal covar                                     // weight for first sPoint when cal mean
     float w0_c = lambda/(2 + lambda) + (1 - std::pow(alpha, 2) + beta);
-    float w_i = 1/ (2 * ( N + lambda));
+    float w_i = 1/ (2 * ( dimensions + lambda));
 
-    // std::cout << "lambda: " << lambda << std::endl; 
+    std::cout << "lambda: " << lambda << std::endl; 
     
-    // std::cout << "w0_m: " << w0_m << " w0_c " << w0_c << std::endl;
+    std::cout << "w0_m: " << w0_m << " w0_c " << w0_c << std::endl;
     
-    // std::cout << "w_i: " << w_i << std::endl;
+    std::cout << "w_i: " << w_i << std::endl;
 
     MatrixXf Weights(5, 5);
     VectorXf W(5, 1);
@@ -293,14 +297,16 @@ MatrixXf newDynamic(MatrixXf sigmaPoints){
 }
 
 void Universal::calculateSigmaPoints() {
-    float lambda = std::pow(alpha, 2) * (N + k) - N;
-    std::cout << "lambda = " << lambda << std::endl;
+    // float lambda = std::pow(alpha, 2) * (N + k) - N;
+    std::cout << "lambda = " << this->lambda << std::endl;
 
     std::cout << "X0: " << X0 << std::endl;
 
     std::cout << "Q: " << Q << std::endl;
 
-    float mutliplier = 0.02; // N - lambda
+    float mutliplier = this->N1 + this->lambda; // N - lambda
+
+    std::cout << "Multiplier: " << mutliplier << std::endl;
 
     MatrixXf L( ((mutliplier) *P).llt().matrixL());
     std::cout << L.col(0) << std::endl;

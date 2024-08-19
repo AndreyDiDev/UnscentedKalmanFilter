@@ -143,6 +143,12 @@ class Universal{
         VectorXf X; // state vector
 
         VectorXf X0; // current state vector
+
+        MatrixXf observe(MatrixXf sigmaPoints);
+
+        float lambda;
+
+        float N1;
     private:
         float Uaccel;
         float Ualt;
