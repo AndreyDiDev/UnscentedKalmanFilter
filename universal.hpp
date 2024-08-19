@@ -1,8 +1,8 @@
 #ifndef UNIVERSAL_HPP
 #define UNIVERSAL_HPP
 
-#include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\eigen-3.4.0\\Eigen\\Cholesky"
-#include "C:\\Users\\andin\\OneDrive\\Documents\\AllRepos\\UnscentedKalmanFilter\\eigen-3.4.0\\Eigen\\Dense"
+#include "C:\\Users\\Andrey\\Documents\\UKFRepo\\UnscentedKalmanFilter\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Cholesky"
+#include "C:\\Users\\Andrey\\Documents\\UKFRepo\\UnscentedKalmanFilter\\eigen-3.4.0\\eigen-3.4.0\\Eigen\\Dense"
 #include <cmath>
 #include <string>
 #include <vector>
@@ -39,16 +39,28 @@ struct Scenario {
 
     std::string name;
 
+    std::vector<float> measurement;
+
     Scenario(std::vector<float> beforeApogeeCoefficientsAccel, std::vector<float> afterApogeeCoefficientsAccel,
         std::vector<float> beforeApogeeCoefficientsVelo, std::vector<float> afterApogeeCoefficientsVelo,
         std::vector<float> beforeApogeeCoefficientsAlt, std::vector<float> afterApogeeCoefficientsAlt, std::string Name)
 
-        : beforeApogeeAccel(beforeApogeeCoefficientsAccel), afterApogeeAccel(afterApogeeCoefficientsAccel), 
+        :beforeApogeeAccel(beforeApogeeCoefficientsAccel), afterApogeeAccel(afterApogeeCoefficientsAccel), 
         beforeApogeeVelo(beforeApogeeCoefficientsVelo), afterApogeeVelo(afterApogeeCoefficientsVelo), 
         beforeApogeeAlt(beforeApogeeCoefficientsAlt), afterApogeeAlt(afterApogeeCoefficientsAlt), name(Name) {};
 
+
+    /**
+     * {Altitude, Velocity, Acceleration}
+     */
+    void setMeasurement(std::vector<float> measurementVector){
+        this->measurement = measurementVector;
+    }
+
     // state machine on apogee
     float evaluateAcceleration(float time) {
+        float measuredAcceleration = measurement[0];
+
         if(isBeforeApogeeBool){
             // evaluate acceleration at timestep before apogee by using the coefficients at 3rd degree polynomial
             return beforeApogeeAccel[0] * pow(time, 3) + beforeApogeeAccel[1] * pow(time, 2) 

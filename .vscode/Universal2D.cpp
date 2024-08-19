@@ -580,12 +580,7 @@ MatrixXf dynamicModel(MatrixXf &X){
     // X = [acceleration, velocity, altitude]
     MatrixXf Xprediction(3, 1);
 
-    // get measurement of Everest
-    // find nearest scenarios 
-    // return state vector for each
-    // here compare and get weights 
-    // here construct equ.s
-    // evaluate  
+
 
     return Xprediction;
 }
