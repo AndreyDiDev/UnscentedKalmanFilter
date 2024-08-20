@@ -24,13 +24,14 @@ using namespace Eigen;
 
 // Madgwick -(Xi = Filtered Altitude)> z = GPS
 
-void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input){
+void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input, MatrixXf &F){
     // Input: Estimate Uncertainty -> system state
     // Initial Guess
     this->X0 = X0;
     this->P = P0;
     this->Z = Z_input;
     this->Q = Q_input;
+    this->F = F;
 
     // F is for state to next state transition
     // P0 = initial guess of state covariance matrix
@@ -85,8 +86,9 @@ void Universal::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_i
 
     // Z_in = [GPS altitude]
     // Z_in << this->getGPSAlt();
+    this->N1 = 6;
 
-    // calculateSigmaPoints();
+    calculateSigmaPoints();
 }
 
 // Update Step-------------------------------------
@@ -125,133 +127,120 @@ void Universal::unscentedTransform(){
 
 }
 
-// void Universal::stateUpdate(){
-//     // Xn = Xn-1 + K (Zn - EstZn)
-//     std::cout << "sigmaPoints state update: " << sigPoints << std::endl;
+void Universal::stateUpdate(){
+    // Xn = Xn-1 + K (Zn - EstZn)
+    std::cout << "sigmaPoints state update: " << sigPoints << std::endl;
 
-//     VectorXf Z_1(13);
-//     Z_1.setZero();
+    MatrixXf Z_1(2, 13);
+    Z_1.setZero(2, 13);
 
-//     for(int rows = 0; rows < 13; rows++){
-//         Z_1(rows) =  sinf(sigPoints(0, rows)) * 0.5;
-//     }
+    for (int i = 0; i < (2 * this->N1) + 1; i++){
+        Z_1.col(i) = observe(sigPoints.col(i));
+    }
+    Z_1 = Z_1 * WeightsForSigmaPoints;
 
-//     // round every value in the sigmaPoints matrix to 4 decimal places
-//     for (int i = 0; i < Z_1.rows(); ++i) {
-//         Z_1(i) = std::round(Z_1(i) * 10000.0) / 10000.0;
-//     }
 
-//     std::cout << "Z_1: " << Z_1 << std::endl;
-//     this->Z = Z_1;
 
-//     MatrixXf R(2,2);
-//     R <<std::pow(5, 2), 0,
-//         0, std::pow(0.0087, 2);
+    std::cout << "Z_1: " << Z_1 << std::endl;
+    this->Z = Z_1;
 
-//     VectorXf zMean(1);
-//     zMean.setZero();
+    MatrixXf R(2,2);
+    R <<std::pow(5, 2), 0,
+        0, std::pow(0.0087, 2);
 
-//     // calculate mean of Z with weights
-//     for(int i = 0; i < 13; i++){
-//         zMean(0) += Z_1(i) * WeightsForSigmaPoints(i);
-//     }
+    // // calculate covariance of Z
+    // VectorXf zCovar(13);
+    // zCovar.setZero();
 
-//     std::cout << "Z Mean: " << zMean << std::endl;
-//     std::cout << "WeightsForSigmaPoints: " << WeightsForSigmaPoints << std::endl;
+    // for(int i = 0; i < 13; i++){
+    //     zCovar(i) += (Z_1(i) - zMean(0));
+    // }
 
-//     // calculate covariance of Z
-//     VectorXf zCovar(13);
-//     zCovar.setZero();
+    // // round every value in the sigmaPoints matrix to 4 decimal places
+    // for (int i = 0; i < 13; ++i) {
+    //     zCovar(i) = std::round(zCovar(i) * 10000.0) / 10000.0;
+    // }
 
-//     for(int i = 0; i < 13; i++){
-//         zCovar(i) += (Z_1(i) - zMean(0));
-//     }
+    // std::cout << "Z Covar: " << zCovar << std::endl;
 
-//     // round every value in the sigmaPoints matrix to 4 decimal places
-//     for (int i = 0; i < 13; ++i) {
-//         zCovar(i) = std::round(zCovar(i) * 10000.0) / 10000.0;
-//     }
+    // // calculate the innovation covariance
+    // VectorXf Pz(1);
 
-//     std::cout << "Z Covar: " << zCovar << std::endl;
+    // for(int i = 0; i < 5; i++){
+    //     Pz(0) += zCovar(i) * WeightsForSigmaPoints(i) * zCovar(i) + R(0);
+    // }
 
-//     // calculate the innovation covariance
-//     VectorXf Pz(1);
+    // std::cout << "Pz: " << Pz << std::endl;
 
-//     for(int i = 0; i < 5; i++){
-//         Pz(0) += zCovar(i) * WeightsForSigmaPoints(i) * zCovar(i) + R(0);
-//     }
+    // // calculate the cross covariance
+    // VectorXf Pxz(2);
+    // Pxz.setZero();
 
-//     std::cout << "Pz: " << Pz << std::endl;
+    // std::cout << "projectError: " << projectError << std::endl;
 
-//     // calculate the cross covariance
-//     VectorXf Pxz(2);
-//     Pxz.setZero();
+    // for(int i = 0; i < 5; i++){
+    //     Pxz(0) += projectError(0, i) * WeightsForSigmaPoints(i) * zCovar(i);
+    //     Pxz(1) += projectError(1, i) * WeightsForSigmaPoints(i) * zCovar(i);
+    // }
 
-//     std::cout << "projectError: " << projectError << std::endl;
+    // // round every value in the sigmaPoints matrix to 4 decimal places
+    // for (int i = 0; i < Pxz.rows(); ++i) {
+    //     Pxz(i) = std::round(Pxz(i) * 10000.0) / 10000.0;
+    // }
 
-//     for(int i = 0; i < 5; i++){
-//         Pxz(0) += projectError(0, i) * WeightsForSigmaPoints(i) * zCovar(i);
-//         Pxz(1) += projectError(1, i) * WeightsForSigmaPoints(i) * zCovar(i);
-//     }
+    // std::cout << "Pxz: " << Pxz << std::endl;
 
-//     // round every value in the sigmaPoints matrix to 4 decimal places
-//     for (int i = 0; i < Pxz.rows(); ++i) {
-//         Pxz(i) = std::round(Pxz(i) * 10000.0) / 10000.0;
-//     }
+    // // calculate the Kalman gain
+    // VectorXf K(2);
+    // K.setZero();
 
-//     std::cout << "Pxz: " << Pxz << std::endl;
+    // K = Pxz * Pz.asDiagonal().inverse();
 
-//     // calculate the Kalman gain
-//     VectorXf K(2);
-//     K.setZero();
+    // std::cout << "Kalman Gain: " << K << std::endl;
 
-//     K = Pxz * Pz.asDiagonal().inverse();
+    // // std::cout << "Z: " << Z << std::endl;
+    // // std::cout << "zMean: " << zMean << std::endl;
+    // // std::cout << "K: " << K << std::endl;
 
-//     std::cout << "Kalman Gain: " << K << std::endl;
+    // std::cout << "Z - zMean: " << zCovar << std::endl;
 
-//     // std::cout << "Z: " << Z << std::endl;
-//     // std::cout << "zMean: " << zMean << std::endl;
-//     // std::cout << "K: " << K << std::endl;
+    // // std::cout << "K * Z: " << K * Z << std::endl;
 
-//     std::cout << "Z - zMean: " << zCovar << std::endl;
+    // std::cout << "Xprediction: " << Xprediction << std::endl;
 
-//     // std::cout << "K * Z: " << K * Z << std::endl;
+    // VectorXf innovation(1);
 
-//     std::cout << "Xprediction: " << Xprediction << std::endl;
+    // // std::cout << "X(0): " << X(0) << std::endl;
 
-//     VectorXf innovation(1);
+    // innovation(0) = X0(0)  -  zMean(0);
 
-//     // std::cout << "X(0): " << X(0) << std::endl;
+    // // std::cout << "sinf(X(0)) * 0.5" << sinf(X(0)) * 0.5 << std::endl;
 
-//     innovation(0) = X0(0)  -  zMean(0);
+    // std::cout << "Innovation: " << innovation << std::endl;
 
-//     // std::cout << "sinf(X(0)) * 0.5" << sinf(X(0)) * 0.5 << std::endl;
+    // // update the state vector
+    // X0 = Xprediction + K * innovation; 
 
-//     std::cout << "Innovation: " << innovation << std::endl;
+    // std::cout << "X(1,1): " << X0 << std::endl;
 
-//     // update the state vector
-//     X0 = Xprediction + K * innovation; 
+    // // update the covariance matrix
+    // MatrixXf P1(2,2);
 
-//     std::cout << "X(1,1): " << X0 << std::endl;
+    // // std::cout << "Pprediction: " << Pprediction << std::endl;
+    // // std::cout << "K: " << K << std::endl;
+    // // std::cout << "Pz: " << Pz << std::endl;
 
-//     // update the covariance matrix
-//     MatrixXf P1(2,2);
+    // P1 = Pprediction - (K * Pz * K.transpose());
 
-//     // std::cout << "Pprediction: " << Pprediction << std::endl;
-//     // std::cout << "K: " << K << std::endl;
-//     // std::cout << "Pz: " << Pz << std::endl;
+    // this->P = P1;
 
-//     P1 = Pprediction - (K * Pz * K.transpose());
+    // std::cout << "P(1,1): " << P << std::endl;
 
-//     this->P = P1;
+    // std::cout << "\n end of state Update\n " << std::endl;
 
-//     std::cout << "P(1,1): " << P << std::endl;
+    // calculateSigmaPoints();
 
-//     std::cout << "\n end of state Update\n " << std::endl;
-
-//     calculateSigmaPoints();
-
-// }
+}
 // ------------------------------------------------
 
 
@@ -276,160 +265,113 @@ void Universal::prediction(){
 
 }
 
-// MatrixXf Universal::observe(MatrixXf sigmaPoints){
-//     VectorXf Z_out(2,1);
+MatrixXf Universal::observe(MatrixXf sigmaPoints){
+    VectorXf Z_out(2,1);
 
-//     for(int i = 0; i < (2 * dim) + 1; i++){
-//         Z_out(0) = sigmaPoints(0, i);
-//     }
+    Z_out << sqrt(pow(sigmaPoints(0), 2) + pow(sigmaPoints(3), 2)),
+            atan(sigmaPoints(3)/sigmaPoints(0));
 
-//     return Z_out;
+    return Z_out;
 
-// }
+}
 
-// MatrixXf newDynamic(MatrixXf sigmaPoints){
-//     float time = 0.05;
+MatrixXf Universal::predict(MatrixXf sigmaPoints){
+    return this->F * sigmaPoints;
+}
 
-//     for(int i = 0; i < (2 * dim) + 1; i++){
-//         sigmaPoints(0, i) = sigmaPoints(0, i) + sigmaPoints(1, i) * time;
-//         sigmaPoints(1, i) = sigmaPoints(1, i) - ((9.8/0.5)*(sigmaPoints(0, i) * time));
-//     }
+void Universal::calculateSigmaPoints() {
 
-//     // Round every value in the sigmaPoints matrix to 4 decimal places
-//     for (int i = 0; i < sigmaPoints.rows(); ++i) {
-//         for (int j = 0; j < sigmaPoints.cols(); ++j) {
-//             sigmaPoints(i, j) = std::round(sigmaPoints(i, j) * 10000.0) / 10000.0;
-//         }
-//     }
+    std::cout << "X0: " << X0 << std::endl;
 
-//     std::cout << "New Sigma Points: \n" << sigmaPoints << std::endl;
-//     // std::cout << "New Sigma Points: \n" << sigmaPoints(1,2) << std::endl;
+    std::cout << "Q: " << Q << std::endl;
 
-//     return sigmaPoints;
+    float mutliplier = this->N1 - 3; // N - lambda
 
-// }
+    std::cout << "Multiplier: " << mutliplier << std::endl;
 
-// void Universal::calculateSigmaPoints() {
-//     float lambda = std::pow(alpha, 2) * (N + k) - N;
-//     std::cout << "lambda = " << lambda << std::endl;
+    MatrixXf L( ((mutliplier) *P).llt().matrixL());
+    std::cout << L.col(0) << std::endl;
 
-//     std::cout << "X0: " << X0 << std::endl;
+    std::cout << "N " << this->N1 << std::endl;
 
-//     std::cout << "Q: " << Q << std::endl;
+    std::cout << "L: \n" << L << std::endl;
 
-//     float mutliplier = 0.02; // N - lambda
+    // Initialize sigma points matrix
+    MatrixXf sigmaPoints(6, 13);
+    sigmaPoints.setZero();
 
-//     MatrixXf L( ((mutliplier) *P).llt().matrixL());
-//     std::cout << L.col(0) << std::endl;
+    // Set the first sigma point
+    sigmaPoints.col(0) = X0;
 
-//     // Round every value in the sigmaPoints matrix to 4 decimal places separately
-//     for (int i = 0; i < L.rows(); ++i) {
-//         for (int j = 0; j < L.cols(); ++j) {
-//             L(i, j) = std::round(L(i, j) * 10000.0) / 10000.0;
-//         }
-//     }
+    // Set the remaining sigma points
+    for (int i = 1; i < this->N1 + 1; i++) {
+        sigmaPoints.col(i) = X0 + L.col(i - 1);
+    }
 
-//     std::cout << "L: \n" << L << std::endl;
+    for(int j = this->N1 + 1; j < (2 * this->N1) + 1; j++){
+        sigmaPoints.col(j) = X0 - L.col(j - this->N1 - 1);
+    }
 
-//     // Initialize sigma points matrix
-//     MatrixXf sigmaPoints(dim, (2 * N) + 1);
-//     sigmaPoints.setZero();
+    // before dynamics
+    std::cout << "before dynamics sPoints: \n" << sigmaPoints << std::endl;
 
-//     // Set the first sigma point
-//     sigmaPoints.col(0) = X0;
+    // propagate sigma points through the dynamic model
+    // sigmaPoints = predict(sigmaPoints);
+    for (int i = 0; i < (2 * this->N1) + 1; i++){
+        sigmaPoints.col(i) = predict(sigmaPoints.col(i));
+    }
 
-//     // Set the remaining sigma points
-//     for (int i = 1; i < dim + 1; i++) {
-//         sigmaPoints.col(i) = X0 + L.col(i - 1);
-//     }
+    std::cout << "after predict sPoints: \n" << sigmaPoints << std::endl;
 
-//     for(int j = dim + 1; j < (2 * N) + 1; j++){
-//         sigmaPoints.col(j) = X0 - L.col(j - dim - 1);
-//     }
+    // std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
+    // std::cout << "Sigma Points row 0 \n" << sigmaPoints.row(0) << std::endl;
+    std::cout << "Sigma Points row 0\n" << sigmaPoints(all, all) << std::endl;
 
-//     // before dynamics
-//     std::cout << "before dynamics sPoints: " << sigmaPoints << std::endl;
+    // std::cout << "WeightsForSigmaPoints row: " << WeightsForSigmaPoints.rows() 
+    // << " col: " << WeightsForSigmaPoints.cols() << std::endl;
 
-//     // propagate sigma points through the dynamic model
-//     sigmaPoints = newDynamic(sigmaPoints);
+    // calculate the mean and covariance of the sigma points
+    VectorXf xPreMean(6,1);
+    for(int row = 0; row < this->N1; row++){
+        float sum00 = 0;
+        for(int col = 0; col < 2*this->N1 + 1; col++){
+            // std::cout << "sP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
+            sum00 += sigmaPoints(row, col) * WeightsForSigmaPoints(col);
+        }
+        xPreMean(row) = sum00;
+        // std::cout << "XpreMean: \n" << xPreMean << std::endl;
+    }
 
-//     // Round every value in the sigmaPoints matrix to 4 decimal places
-//     for (int i = 0; i < sigmaPoints.rows(); ++i) {
-//         for (int j = 0; j < sigmaPoints.cols(); ++j) {
-//             sigmaPoints(i, j) = std::round(sigmaPoints(i, j) * 10000.0) / 10000.0;
-//         }
-//     }
+    std::cout << "XpreMean: \n" << xPreMean << std::endl;
+    // std::cout << "Xprediction: \n" << Xprediction << std::endl;
+    this->Xprediction = xPreMean;
 
-//     // std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
-//     // std::cout << "Sigma Points row 0 \n" << sigmaPoints.row(0) << std::endl;
-//     std::cout << "Sigma Points row 0\n" << sigmaPoints(all, all) << std::endl;
-
-//     // std::cout << "WeightsForSigmaPoints row: " << WeightsForSigmaPoints.rows() 
-//     // << " col: " << WeightsForSigmaPoints.cols() << std::endl;
-
-//     // calculate the mean and covariance of the sigma points
-//     VectorXf xPreMean(2,1);
-//     for(int row = 0; row < N; row++){
-//         float sum00 = 0;
-//         for(int col = 0; col < 5; col++){
-//             // std::cout << "sP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
-//             sum00 += sigmaPoints(row, col) * WeightsForSigmaPoints(col);
-//         }
-//         xPreMean(row) = sum00;
-//         // std::cout << "XpreMean: \n" << xPreMean << std::endl;
-//     }
-
-//     std::cout << "XpreMean: \n" << xPreMean << std::endl;
-//     // std::cout << "Xprediction: \n" << Xprediction << std::endl;
-//     this->Xprediction = xPreMean;
-
-//     MatrixXf projError(2, 5);
+    MatrixXf projError(6, 13);
+    projError.setZero(6, 13);
     
-//     // std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
-//     // std::cout << "xPreMean row: " << xPreMean.rows() << " col: " << xPreMean.cols() << std::endl;
-//     // std::cout << "sigmaPoints (0,3) " << projError(0,3) << std::endl;
+    // std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
+    // std::cout << "xPreMean row: " << xPreMean.rows() << " col: " << xPreMean.cols() << std::endl;
+    // std::cout << "sigmaPoints (0,3) " << projError(0,3) << std::endl;
 
-//     for(int row = 0; row < N; row++){
-//         for(int col = 0; col < 5; col++){
-//             // std::cout << "sigmaP (" << row << ", " << col << ")" << "= " << sigmaPoints(row, col) << std::endl;
-//             // std::cout << " - xPreMean (" << row << ", " << col << ")" << "= " << xPreMean(row) << std::endl;
-//             projError(row, col) = sigmaPoints(row, col) - xPreMean(row);
-//             // std::cout << " = projError (" << row << ", " << col << ")" << "= " << projError(row, col) << std::endl;
-//         }
-//     }
+    for (int i = 0; i < this->N1; i++)
+    {
+        projError.row(i) = (sigmaPoints.row(i).array() - (this->Xprediction).row(i).value()).matrix();
+    }
 
-//     // Round every value in the sigmaPoints matrix to 4 decimal places
-//     for (int i = 0; i < projError.rows(); ++i) {
-//         for (int j = 0; j < projError.cols(); ++j) {
-//             projError(i, j) = std::round(projError(i, j) * 10000.0) / 10000.0;
-//         }
-//     }
+    std::cout << "Project Error: \n" << projError << std::endl;
 
-//     std::cout << "Project Error: \n" << projError << std::endl;
+    this->projectError = projError;
 
-//     this->projectError = projError;
+    MatrixXf Pprediction(6,6);
 
-//     // assuming non linear dynamics
-//     MatrixXf Pprediction(2,2);
-//     WeightsForSigmaPoints.asDiagonal();
+    Pprediction = projError * WeightsForSigmaPoints.asDiagonal() * projError.transpose() + this->Q;
 
-//     // std::cout << "WeightsForSigmaPoints as diagonal: \n" << WeightsForSigmaPoints << std::endl;
+    std::cout << "\nPprediction: \n" << Pprediction << std::endl;
 
-//     Pprediction = projError * WeightsForSigmaPoints.asDiagonal() * projError.transpose() + Q;
+    this->Pprediction = Pprediction;
 
-//     // Round every value in the sigmaPoints matrix to 4 decimal places
-//     for (int i = 0; i < Pprediction.rows(); ++i) {
-//         for (int j = 0; j < Pprediction.cols(); ++j) {
-//             Pprediction(i, j) = std::round(Pprediction(i, j) * 10000.0) / 10000.0;
-//         }
-//     }
-
-//     std::cout << "Pprediction: \n" << Pprediction << std::endl;
-
-//     this->Pprediction = Pprediction;
-
-//     this->sigPoints =  sigmaPoints;
-// }
+    this->sigPoints =  sigmaPoints;
+}
 
 // Function to interpolate between two nearest scenarios
 float Universal::interpolateScenarios(VectorXf &X_in, std::vector<Scenario> &scenarios) {
@@ -614,10 +556,10 @@ int main(){
 
 
     MatrixXf F(6 , 6);
-    F << 1, deltaT, 0.05 * std::pow(deltaT,2), 0, 0, 0,
+    F << 1, deltaT, 0.5 * std::pow(deltaT,2), 0, 0, 0,
          0, 1, deltaT, 0, 0, 0,
          0, 0, 1, 0, 0, 0,
-         0, 0, 0, 1, deltaT, 0.05 * std::pow(deltaT, 2),
+         0, 0, 0, 1, deltaT, 0.5 * std::pow(deltaT, 2),
          0, 0, 0, 0, 1, deltaT,
          0, 0, 0, 0, 0, 1;
 
@@ -670,18 +612,18 @@ int main(){
 
     Universal uni = Universal();
 
-    uni.init(X0, P, Q, Z_in);
+    uni.init(X0, P, Q, Z_in, F);
 
-    // for(int i = 0; i < 10; i++){
-    //     std::cout << "\n\nIteration: " << i << std::endl;
-    //     uni.stateUpdate();
+    for(int i = 0; i < 1; i++){
+        std::cout << "\n\nIteration: " << i << std::endl;
+        uni.stateUpdate();
 
-    //     // Write the filtered values to the file
-    //     outFile << i*0.05 << "," << uni.X0(0) << "," << uni.X0(1) << "," << X(i) << "\n";
+        // Write the filtered values to the file
+        // outFile << i*0.05 << "," << uni.X0(0) << "," << uni.X0(1) << "," << X(i) << "\n";
 
-    //     // measure
-    //     uni.X0(0) = X(i);
-    // }
+        // measure
+        uni.X0(0) = X(i);
+    }
 
     // // Close the file
     // outFile.close();

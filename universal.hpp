@@ -149,6 +149,10 @@ class Universal{
         float lambda;
 
         float N1;
+
+        MatrixXf predict(MatrixXf sigmaPoints);
+
+        void init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input, MatrixXf &F);
     private:
         float Uaccel;
         float Ualt;
