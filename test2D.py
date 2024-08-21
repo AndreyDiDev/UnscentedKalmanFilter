@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Read the CSV file
-df = pd.read_csv('filtered_values_2D.csv')
+df = pd.read_csv('filtered_values_2D_HALO.csv')
 
 # Plot the filtered values
 plt.figure(figsize=(10, 6))
