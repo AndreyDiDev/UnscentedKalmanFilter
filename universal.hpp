@@ -153,6 +153,8 @@ class Universal{
         MatrixXf predict(MatrixXf sigmaPoints);
 
         void init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input, MatrixXf &F);
+
+        VectorXf Z; // measurement vector
     private:
         float Uaccel;
         float Ualt;
@@ -183,8 +185,6 @@ class Universal{
         MatrixXf H; // state to measurement matrix
         MatrixXf R; // measurement noise covariance matrix
         MatrixXf K; // Kalman gain matrix
-
-        VectorXf Z;
 
         kinematics Kinematics;
 

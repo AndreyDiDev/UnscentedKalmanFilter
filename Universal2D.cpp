@@ -129,116 +129,86 @@ void Universal::unscentedTransform(){
 
 void Universal::stateUpdate(){
     // Xn = Xn-1 + K (Zn - EstZn)
-    std::cout << "sigmaPoints state update: " << sigPoints << std::endl;
+    // std::cout << "sigmaPoints state update: \n" << sigPoints << std::endl;
 
-    MatrixXf Z_1(2, 13);
-    Z_1.setZero(2, 13);
+    MatrixXf observedValues(2, 13);
+    observedValues.setZero(2, 13);
 
     for (int i = 0; i < (2 * this->N1) + 1; i++){
-        Z_1.col(i) = observe(sigPoints.col(i));
+        observedValues.col(i) = observe(sigPoints.col(i));
     }
-    Z_1 = Z_1 * WeightsForSigmaPoints;
 
+    // std::cout << "Observed Values: \n" << observedValues << std::endl;
 
+    // calculate the mean of the observed values
+    VectorXf zMean(2);
+    zMean = observedValues * WeightsForSigmaPoints;
 
-    std::cout << "Z_1: " << Z_1 << std::endl;
-    this->Z = Z_1;
+    // std::cout << "Z_1: " << zMean << std::endl;
+    this->Z = zMean;
 
     MatrixXf R(2,2);
     R <<std::pow(5, 2), 0,
         0, std::pow(0.0087, 2);
 
-    // // calculate covariance of Z
-    // VectorXf zCovar(13);
-    // zCovar.setZero();
-
-    // for(int i = 0; i < 13; i++){
-    //     zCovar(i) += (Z_1(i) - zMean(0));
-    // }
-
-    // // round every value in the sigmaPoints matrix to 4 decimal places
-    // for (int i = 0; i < 13; ++i) {
-    //     zCovar(i) = std::round(zCovar(i) * 10000.0) / 10000.0;
-    // }
-
+    // calculate covariance of Z
+    MatrixXf zCovar(2, 13);
+    zCovar.setZero(2, (2 * 6) + 1);
+    for (int i = 0; i < 2; i++)
+    {
+        zCovar.row(i) = (observedValues.row(i).array() - zMean.row(i).value()).matrix();
+    }
+ 
     // std::cout << "Z Covar: " << zCovar << std::endl;
 
-    // // calculate the innovation covariance
-    // VectorXf Pz(1);
+    // calculate the innovation covariance
+    MatrixXf Pz(2, 2);
+    Pz.setZero(2, 2);
 
-    // for(int i = 0; i < 5; i++){
-    //     Pz(0) += zCovar(i) * WeightsForSigmaPoints(i) * zCovar(i) + R(0);
-    // }
+    Pz = (zCovar * WeightsForSigmaPoints.asDiagonal() * zCovar.transpose()) + R;
 
     // std::cout << "Pz: " << Pz << std::endl;
 
-    // // calculate the cross covariance
-    // VectorXf Pxz(2);
-    // Pxz.setZero();
+    // calculate the cross covariance
+    MatrixXf Pxz(6,2);
+    Pxz.setZero();
 
     // std::cout << "projectError: " << projectError << std::endl;
 
-    // for(int i = 0; i < 5; i++){
-    //     Pxz(0) += projectError(0, i) * WeightsForSigmaPoints(i) * zCovar(i);
-    //     Pxz(1) += projectError(1, i) * WeightsForSigmaPoints(i) * zCovar(i);
-    // }
-
-    // // round every value in the sigmaPoints matrix to 4 decimal places
-    // for (int i = 0; i < Pxz.rows(); ++i) {
-    //     Pxz(i) = std::round(Pxz(i) * 10000.0) / 10000.0;
-    // }
+    Pxz = projectError * WeightsForSigmaPoints.asDiagonal() * zCovar.transpose(); 
 
     // std::cout << "Pxz: " << Pxz << std::endl;
 
-    // // calculate the Kalman gain
-    // VectorXf K(2);
-    // K.setZero();
+    // calculate the Kalman gain
+    MatrixXf K(6, 2);
+    K.setZero();
 
-    // K = Pxz * Pz.asDiagonal().inverse();
+    K = Pxz * Pz.inverse();
 
-    // std::cout << "Kalman Gain: " << K << std::endl;
+    // std::cout << "X: \n" << this->X << std::endl;
+    // std::cout << "Kalman Gain: \n" << K << std::endl;
 
-    // // std::cout << "Z: " << Z << std::endl;
-    // // std::cout << "zMean: " << zMean << std::endl;
-    // // std::cout << "K: " << K << std::endl;
+    // update the state vector
+    X0 = this->Xprediction + K * (this->X - zMean); 
 
-    // std::cout << "Z - zMean: " << zCovar << std::endl;
+    std::cout << "X: \n" << X0 << std::endl;
 
-    // // std::cout << "K * Z: " << K * Z << std::endl;
-
-    // std::cout << "Xprediction: " << Xprediction << std::endl;
-
-    // VectorXf innovation(1);
-
-    // // std::cout << "X(0): " << X(0) << std::endl;
-
-    // innovation(0) = X0(0)  -  zMean(0);
-
-    // // std::cout << "sinf(X(0)) * 0.5" << sinf(X(0)) * 0.5 << std::endl;
-
-    // std::cout << "Innovation: " << innovation << std::endl;
-
-    // // update the state vector
-    // X0 = Xprediction + K * innovation; 
-
-    // std::cout << "X(1,1): " << X0 << std::endl;
-
-    // // update the covariance matrix
-    // MatrixXf P1(2,2);
+    // update the covariance matrix
+    MatrixXf P1(6,6);
 
     // // std::cout << "Pprediction: " << Pprediction << std::endl;
     // // std::cout << "K: " << K << std::endl;
     // // std::cout << "Pz: " << Pz << std::endl;
 
-    // P1 = Pprediction - (K * Pz * K.transpose());
+    P1 = Pprediction - (K * Pz * K.transpose());
 
-    // this->P = P1;
+    this->P = P1;
 
-    // std::cout << "P(1,1): " << P << std::endl;
+    std::cout << "P(1,1): " << P << std::endl;
 
-    // std::cout << "\n end of state Update\n " << std::endl;
+    std::cout << "\n end of state Update\n " << std::endl;
 
-    // calculateSigmaPoints();
+    calculateSigmaPoints();
 
 }
 // ------------------------------------------------
@@ -281,20 +251,20 @@ MatrixXf Universal::predict(MatrixXf sigmaPoints){
 
 void Universal::calculateSigmaPoints() {
 
-    std::cout << "X0: " << X0 << std::endl;
+    // std::cout << "X0: " << X0 << std::endl;
 
-    std::cout << "Q: " << Q << std::endl;
+    // std::cout << "Q: " << Q << std::endl;
 
     float mutliplier = this->N1 - 3; // N - lambda
 
-    std::cout << "Multiplier: " << mutliplier << std::endl;
+    // std::cout << "Multiplier: " << mutliplier << std::endl;
 
     MatrixXf L( ((mutliplier) *P).llt().matrixL());
-    std::cout << L.col(0) << std::endl;
+    // std::cout << L.col(0) << std::endl;
 
-    std::cout << "N " << this->N1 << std::endl;
+    // std::cout << "N " << this->N1 << std::endl;
 
-    std::cout << "L: \n" << L << std::endl;
+    // std::cout << "L: \n" << L << std::endl;
 
     // Initialize sigma points matrix
     MatrixXf sigmaPoints(6, 13);
@@ -313,7 +283,7 @@ void Universal::calculateSigmaPoints() {
     }
 
     // before dynamics
-    std::cout << "before dynamics sPoints: \n" << sigmaPoints << std::endl;
+    // std::cout << "before dynamics sPoints: \n" << sigmaPoints << std::endl;
 
     // propagate sigma points through the dynamic model
     // sigmaPoints = predict(sigmaPoints);
@@ -321,11 +291,11 @@ void Universal::calculateSigmaPoints() {
         sigmaPoints.col(i) = predict(sigmaPoints.col(i));
     }
 
-    std::cout << "after predict sPoints: \n" << sigmaPoints << std::endl;
+    // std::cout << "after predict sPoints: \n" << sigmaPoints << std::endl;
 
     // std::cout << "Sigma Points row: " << sigmaPoints.rows() << " col: " << sigmaPoints.cols() << std::endl;
     // std::cout << "Sigma Points row 0 \n" << sigmaPoints.row(0) << std::endl;
-    std::cout << "Sigma Points row 0\n" << sigmaPoints(all, all) << std::endl;
+    // std::cout << "Sigma Points row 0\n" << sigmaPoints(all, all) << std::endl;
 
     // std::cout << "WeightsForSigmaPoints row: " << WeightsForSigmaPoints.rows() 
     // << " col: " << WeightsForSigmaPoints.cols() << std::endl;
@@ -342,7 +312,7 @@ void Universal::calculateSigmaPoints() {
         // std::cout << "XpreMean: \n" << xPreMean << std::endl;
     }
 
-    std::cout << "XpreMean: \n" << xPreMean << std::endl;
+    // std::cout << "XpreMean: \n" << xPreMean << std::endl;
     // std::cout << "Xprediction: \n" << Xprediction << std::endl;
     this->Xprediction = xPreMean;
 
@@ -358,7 +328,7 @@ void Universal::calculateSigmaPoints() {
         projError.row(i) = (sigmaPoints.row(i).array() - (this->Xprediction).row(i).value()).matrix();
     }
 
-    std::cout << "Project Error: \n" << projError << std::endl;
+    // std::cout << "Project Error: \n" << projError << std::endl;
 
     this->projectError = projError;
 
@@ -581,8 +551,8 @@ int main(){
         0, 0, 0, 0, 0, 500;
 
 
-    VectorXf Z_in(6,1);
-    Z_in << 0, 0, 0, 0, 0, 0;
+    VectorXf Z_in(2,1);
+    Z_in << 0, 0;
 
     MatrixXf Q(6,6);
     Q << 0.25, 0.5, 0.5, 0, 0, 0,
@@ -599,34 +569,37 @@ int main(){
     std::cout << "X:\n" << X << std::endl;
 
     // Open a file for writing
-    // std::ofstream outFile("filtered_values.csv");
+    std::ofstream outFile("filtered_values_2D.csv");
 
-    // // Check if the file is open
-    // if (!outFile.is_open()) {
-    //     std::cerr << "Failed to open file for writing." << std::endl;
-    //     return 1;
-    // }
+    // Check if the file is open
+    if (!outFile.is_open()) {
+        std::cerr << "Failed to open filtered_values_2D.csv" << std::endl;
+        return 1;
+    }
 
-    // // Write the header to the file
-    // outFile << "Time,FilteredValue_angle,FilteredValue_velo,Raw\n";
+    // Write the header to the file
+    outFile << "Time,X,Y,XVelo,YVelo\n";
 
     Universal uni = Universal();
 
     uni.init(X0, P, Q, Z_in, F);
 
-    for(int i = 0; i < 1; i++){
-        std::cout << "\n\nIteration: " << i << std::endl;
+    VectorXf X1(2,1);
+    uni.X = X1;
+
+    for(int i = 0; i < 35; i++){
+        std::cout << "\n\nIteration: " << i + 1<< std::endl;
+
+        uni.X << X(0, i), X(1, i);
+
         uni.stateUpdate();
 
         // Write the filtered values to the file
-        // outFile << i*0.05 << "," << uni.X0(0) << "," << uni.X0(1) << "," << X(i) << "\n";
-
-        // measure
-        uni.X0(0) = X(i);
+        outFile << i << "," << uni.X0(0) << "," << uni.X0(3) << "," << uni.X0(1) << "," << uni.X0(4) << "\n";
     }
 
-    // // Close the file
-    // outFile.close();
+    // Close the file
+    outFile.close();
 
     return 0;
 
