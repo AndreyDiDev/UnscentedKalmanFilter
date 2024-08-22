@@ -155,7 +155,9 @@ class HALO{
         void init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input, MatrixXf &F);
 
         VectorXf Z; // measurement vector
+
     private:
+
         float Uaccel;
         float Ualt;
         float Uvelo;

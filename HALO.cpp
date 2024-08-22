@@ -46,7 +46,7 @@ void HALO::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input,
     // Weights for sigma points
     // float lambda = std::pow(alpha, 2) * (dim + k) - dim;
     // lambda = -1.98;
-    float dime = 6;
+    float dime = 3;
     float k1 = 3 - dime;
     float w0_m = k1 / (dime + k1);    // weight for first sPoint when cal covar                                     // weight for first sPoint when cal mean
     // float w0_c = lambda/(2 + lambda) + (1 - std::pow(alpha, 2) + beta);
@@ -58,12 +58,12 @@ void HALO::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input,
     
     std::cout << "w_i: " << w_i << std::endl;
 
-    MatrixXf Weights(13, 13);
-    VectorXf W(13, 1);
+    MatrixXf Weights(7, 7);
+    VectorXf W(7, 1);
 
-    W.setConstant(2 * dim + 1, w_i);
+    W.setConstant(7, w_i);
 
-    for(int i = 1; i < 13; i++){
+    for(int i = 1; i < 7; i++){
         Weights.diagonal()[i] = w_i;
     }
 
@@ -75,8 +75,8 @@ void HALO::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input,
 
     // errors can be because you didnt instatiate the matrix
     // or trying to make a vector and declaring as a matrix
-    VectorXf WeightsForSigmaPoints(13, 1);
-    WeightsForSigmaPoints.setConstant(13, w_i);
+    VectorXf WeightsForSigmaPoints(7, 1);
+    WeightsForSigmaPoints.setConstant(7, w_i);
     WeightsForSigmaPoints(0) = w0_m;
     this->WeightsForSigmaPoints = WeightsForSigmaPoints;
 
@@ -87,7 +87,7 @@ void HALO::init(MatrixXf &X0, MatrixXf &P0, MatrixXf Q_input, VectorXf &Z_input,
 
     // Z_in = [GPS altitude]
     // Z_in << this->getGPSAlt();
-    this->N1 = 6;
+    this->N1 = 3;
 
     calculateSigmaPoints();
 }
@@ -132,8 +132,8 @@ void HALO::stateUpdate(){
     // Xn = Xn-1 + K (Zn - EstZn)
     // std::cout << "sigmaPoints state update: \n" << sigPoints << std::endl;
 
-    MatrixXf observedValues(2, 13);
-    observedValues.setZero(2, 13);
+    MatrixXf observedValues(2, 6);
+    observedValues.setZero(2, 6);
 
     for (int i = 0; i < (2 * this->N1) + 1; i++){
         observedValues.col(i) = observe(sigPoints.col(i));
@@ -153,18 +153,18 @@ void HALO::stateUpdate(){
         0, std::pow(0.0087, 2);
 
     // calculate covariance of Z
-    MatrixXf zCovar(2, 13);
-    zCovar.setZero(2, (2 * 6) + 1);
+    MatrixXf zCovar(2, 7);
+    zCovar.setZero(2, (2 * 3) + 1);
     for (int i = 0; i < 2; i++)
     {
         zCovar.row(i) = (observedValues.row(i).array() - zMean.row(i).value()).matrix();
     }
- 
+
     // std::cout << "Z Covar: " << zCovar << std::endl;
 
     // calculate the innovation covariance
-    MatrixXf Pz(2, 2);
-    Pz.setZero(2, 2);
+    MatrixXf Pz(3, 3);
+    Pz.setZero(3, 3);
 
     Pz = (zCovar * WeightsForSigmaPoints.asDiagonal() * zCovar.transpose()) + R;
 
@@ -181,7 +181,7 @@ void HALO::stateUpdate(){
     // std::cout << "Pxz: " << Pxz << std::endl;
 
     // calculate the Kalman gain
-    MatrixXf K(6, 2);
+    MatrixXf K(3, 2);
     K.setZero();
 
     K = Pxz * Pz.inverse();
@@ -195,7 +195,7 @@ void HALO::stateUpdate(){
     std::cout << "X: \n" << X0 << std::endl;
 
     // update the covariance matrix
-    MatrixXf P1(6,6);
+    MatrixXf P1(3,3);
 
     // // std::cout << "Pprediction: " << Pprediction << std::endl;
     // // std::cout << "K: " << K << std::endl;
@@ -236,6 +236,9 @@ void HALO::prediction(){
 
 }
 
+/**
+ * From measurement to state transition 
+ */
 MatrixXf HALO::observe(MatrixXf sigmaPoints){
     VectorXf Z_out(2,1);
 
@@ -246,6 +249,9 @@ MatrixXf HALO::observe(MatrixXf sigmaPoints){
 
 }
 
+/**
+ * From state to state transition
+ */
 MatrixXf HALO::predict(MatrixXf sigmaPoints){
     return this->F * sigmaPoints;
 }
@@ -287,7 +293,6 @@ void HALO::calculateSigmaPoints() {
     // std::cout << "before dynamics sPoints: \n" << sigmaPoints << std::endl;
 
     // propagate sigma points through the dynamic model
-    // sigmaPoints = predict(sigmaPoints);
     for (int i = 0; i < (2 * this->N1) + 1; i++){
         sigmaPoints.col(i) = predict(sigmaPoints.col(i));
     }
@@ -503,28 +508,22 @@ void HALO::setStateVector(float filteredAcc, float filteredVelo, float filteredA
 
     /** X_in = [acceleration, velocity, altitude] */
     this->X << this->Uaccel, this->Uvelo, this->Ualt;
+    halo.stateUpdate();
 }
 
 // prediction step based on the dynamic model
 MatrixXf dynamicModel(MatrixXf &X){
     // X = [acceleration, velocity, altitude]
     MatrixXf Xprediction(3, 1);
-
-
-
     return Xprediction;
 }
 
 int main(){
-    // Initialize the state vector
-    // setStateVector(Everest::filteredAcc, Everest::filteredVelo, Everest::filteredAlt);
-
     // only able to measure angle and extrapolate for velocity
     MatrixXf X0(6, 1);
     X0 << 400, 0, 0, -300, 0, 0;
 
     int deltaT = 1;
-
 
     MatrixXf F(6 , 6);
     F << 1, deltaT, 0.5 * std::pow(deltaT,2), 0, 0, 0,
@@ -536,12 +535,12 @@ int main(){
 
     MatrixXf X(2, 35);
     X << 502.55, 477.34, 457.21, 442.94, 427.27, 406.05, 400.73, 377.32, 360.27, 345.93, 333.34, 328.07, 315.48,
-                          301.41, 302.87, 304.25, 294.46, 294.29, 299.38, 299.37, 300.68, 304.1, 301.96, 300.3, 301.9, 296.7, 297.07,
-                          295.29, 296.31, 300.62, 292.3, 298.11, 298.07, 298.92, 298.04,
-                          
+                            301.41, 302.87, 304.25, 294.46, 294.29, 299.38, 299.37, 300.68, 304.1, 301.96, 300.3, 301.9, 296.7, 297.07,
+                            295.29, 296.31, 300.62, 292.3, 298.11, 298.07, 298.92, 298.04,
+
         -0.9316, -0.8977, -0.8512, -0.8114, -0.7853, -0.7392, -0.7052, -0.6478, -0.59, -0.5183, -0.4698, -0.3952, -0.3026,
-                          -0.2445, -0.1626, -0.0937, 0.0085, 0.0856, 0.1675, 0.2467, 0.329, 0.4149, 0.504, 0.5934, 0.667, 0.7537, 0.8354,
-                          0.9195, 1.0039, 1.0923, 1.1546, 1.2564, 1.3274, 1.409, 1.5011;
+                            -0.2445, -0.1626, -0.0937, 0.0085, 0.0856, 0.1675, 0.2467, 0.329, 0.4149, 0.504, 0.5934, 0.667, 0.7537, 0.8354,
+                            0.9195, 1.0039, 1.0923, 1.1546, 1.2564, 1.3274, 1.409, 1.5011;
 
     MatrixXf P(6, 6);
     P <<500, 0, 0, 0, 0, 0,
@@ -557,11 +556,11 @@ int main(){
 
     MatrixXf Q(6,6);
     Q << 0.25, 0.5, 0.5, 0, 0, 0,
-         0.5, 1, 1, 0, 0, 0,
-         0.5, 1, 1, 0, 0, 0,
-         0, 0, 0, 0.25, 0.5, 0.5,
-         0, 0, 0, 0.5, 1, 1,
-         0, 0, 0, 0.5, 1, 1;
+            0.5, 1, 1, 0, 0, 0,
+            0.5, 1, 1, 0, 0, 0,
+            0, 0, 0, 0.25, 0.5, 0.5,
+            0, 0, 0, 0.5, 1, 1,
+            0, 0, 0, 0.5, 1, 1;
 
     Q = Q * std::pow(0.2, 2);
 
@@ -589,7 +588,7 @@ int main(){
     halo.X = X1;
 
     for(int i = 0; i < 35; i++){
-        std::cout << "\n\nIteration: " << i + 1<< std::endl;
+        std::cout << "\n\nIteration: " << i + 1 << std::endl;
 
         halo.X << X(0, i), X(1, i);
 
