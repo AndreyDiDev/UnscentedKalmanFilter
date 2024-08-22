@@ -1,0 +1,4 @@
+[submodule "EverestLibrary_HALO/EverestL"]
+	path = EverestLibrary_HALO/EverestL
+	url = https://github.com/AndreyDiDev/Apogee-Detection-Everest.git
+	branch = Library
