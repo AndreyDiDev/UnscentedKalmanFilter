@@ -2,3 +2,7 @@
 	path = EverestLibrary_HALO/EverestL
 	url = https://github.com/AndreyDiDev/Apogee-Detection-Everest.git
 	branch = Library
+[submodule "Apogee-Detection-Everest"]
+	path = Apogee-Detection-Everest
+	url = https://github.com/AndreyDiDev/Apogee-Detection-Everest.git
+	branch = HALO
