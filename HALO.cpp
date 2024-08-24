@@ -508,7 +508,7 @@ void HALO::setStateVector(float filteredAcc, float filteredVelo, float filteredA
 
     /** X_in = [acceleration, velocity, altitude] */
     this->X << this->Uaccel, this->Uvelo, this->Ualt;
-    halo.stateUpdate();
+    this->stateUpdate();
 }
 
 // prediction step based on the dynamic model
