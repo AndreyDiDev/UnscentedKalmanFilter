@@ -17,11 +17,11 @@ using namespace Eigen;
  * Keeps track of the kinematics of HALO. Updated
  * with UKF state update
  */
-typedef struct{
-    float initialVelo;
-    float initialAlt;
-    float finalAltitude;
-} kinematics;
+// typedef struct{
+//     float initialVelo;
+//     float initialAlt;
+//     float finalAltitude;
+// } kinematics;
 
 /**
  * @brief Scenario struct to store the coefficients of the 3rd degree polynomial for acceleration, velocity and altitude
@@ -140,7 +140,7 @@ class HALO{
 
         void calculateSigmaPoints();
 
-        VectorXf X; // state vector
+        VectorXf X;  // state vector
 
         VectorXf X0; // current state vector
 
@@ -188,9 +188,9 @@ class HALO{
         MatrixXf R; // measurement noise covariance matrix
         MatrixXf K; // Kalman gain matrix
 
-        kinematics Kinematics;
+        // kinematics Kinematics;
 
-        kinematics* getKinematics();
+        // kinematics* getKinematics();
 
         MatrixXf sigPoints;
 
@@ -226,8 +226,12 @@ float HALO::getGPSAlt(){
     return this->GPS_Alt;
 }
 
-kinematics* HALO::getKinematics(){
-    return &Kinematics;
-}
+// kinematics* HALO::getKinematics(){
+//     return &Kinematics;
+// }
+
+// HALO getHALO(){
+//     return 
+// }
 
 #endif

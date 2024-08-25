@@ -190,7 +190,7 @@ void HALO::stateUpdate(){
     // std::cout << "Kalman Gain: \n" << K << std::endl;
 
     // update the state vector
-    X0 = this->Xprediction + K * (this->X - zMean); 
+    X0 = this->Xprediction + K * (this->X - zMean);
 
     std::cout << "X: \n" << X0 << std::endl;
 
